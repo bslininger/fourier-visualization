@@ -1,0 +1,138 @@
+    // ===============================
+    // main.ts
+    // Entry point for the application
+    // ===============================
+
+    // Constants
+    const X_MIN = -6;
+    const X_MAX = 6;
+    const Y_MIN = -10;
+    const Y_MAX = 10;
+    const N_SAMPLES = 1000;
+    const COORDINATES = getXYPairs();
+
+    // ---- Grab DOM elements ----
+    const canvasElement = document.getElementById("graph");
+    if (!(canvasElement instanceof HTMLCanvasElement)) {
+        throw new Error("Canvas element #graph not found");
+    }
+    const canvas = canvasElement;
+
+    const ctx2d = canvas.getContext("2d");
+    if (!ctx2d) {
+        throw new Error("2D canvas context not available");
+    }
+    const ctx = ctx2d;
+
+    // Optional status line
+    const statusElement = document.getElementById("status");
+
+    // ---- Basic timing state ----
+    let lastTime = 0;
+
+    // ---- Animation loop ----
+    function animate(time: number) {
+        const deltaTime = (time - lastTime) * 0.001; // seconds
+        lastTime = time;
+
+        update(deltaTime);
+        render();
+
+        requestAnimationFrame(animate);
+    }
+
+    // ---- Update logic (no rendering here) ----
+    function update(dt: number): void {
+        // Future:
+        // - advance term interpolation
+        // - respond to sliders
+        // - update partial sums
+        void dt; // prevents an "unused parameter" warning until you use dt
+    }
+
+        // ---- Rendering logic (no state mutation here) ----
+    function render(): void {
+        // Clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Placeholder visuals so you know it's working
+        ctx.strokeStyle = "#6cf";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        let inDrawableSpace = false; // A y value that is finite, real, and within the bounds of the canvas
+        let previousCoordinate: { x: number, y:number } | null = null;
+
+        const yOutsideRange = (y: number) => !Number.isFinite(y) || y < Y_MIN || y > Y_MAX;
+
+        for (const coordinate of COORDINATES) {
+            let yIsValid = !yOutsideRange(coordinate.y);
+            const xCanvas = mapX(coordinate.x);
+            const yCanvas = mapY(coordinate.y);
+            let yOnEdge = (yCanvas === 0 || yCanvas === canvas.height)
+            if (!inDrawableSpace && yIsValid) {
+                // "Entering" drawable space
+                inDrawableSpace = true;
+                if (previousCoordinate !== null && yOutsideRange(previousCoordinate.y)) {
+                    const yBoundaryHit = previousCoordinate.y < Y_MIN ? Y_MIN : Y_MAX;
+                    // Calculate the ratio of the length of the shortened line segment that hits the boundary to the full line segment length.
+                    // This ratio will be the same for both the x and y directions by properties of similar triangles (or using other arguments).
+                    // No need for abs() because the top and bottom always have the same sign
+                    const lineLengthRatio = (yBoundaryHit - coordinate.y) / (previousCoordinate.y - coordinate.y);
+                    const xBoundaryHit = coordinate.x + lineLengthRatio * (previousCoordinate.x - coordinate.x);
+                    ctx.moveTo(mapX(xBoundaryHit), mapY(yBoundaryHit));
+                    ctx.lineTo(xCanvas, yCanvas);
+                    }
+                else
+                    // Coming back from an undefined region
+                    ctx.moveTo(xCanvas, yCanvas);
+            }
+            else if (inDrawableSpace && yIsValid)
+                ctx.lineTo(xCanvas, yCanvas);
+            else if (inDrawableSpace && !yIsValid) {
+                // "Exiting" drawable space
+                inDrawableSpace = false;
+                if (previousCoordinate !== null){  // yIsValid is already false, no need to check again
+                    const boundaryHitY = coordinate.y < Y_MIN ? Y_MIN : Y_MAX;
+                    const lineLengthRatio = (boundaryHitY - previousCoordinate.y) / (coordinate.y - previousCoordinate.y);
+                    const boundaryHitX = previousCoordinate.x + lineLengthRatio * (coordinate.x - previousCoordinate.x);
+                    ctx.lineTo(mapX(boundaryHitX), mapY(boundaryHitY));
+                }
+            }
+            previousCoordinate = {x: coordinate.x, y: coordinate.y};
+        };
+        ctx.stroke();
+    }
+
+    // ---- Kick things off ----
+    requestAnimationFrame(animate);
+
+    // ---- Debug helper (optional) ----
+    function setStatus(text: string): void {
+        if (statusElement) statusElement.textContent = text;
+    }
+
+    setStatus("Initialized");
+
+    // Test function
+    function f(x: number): number {
+        return Math.sin(5 * x) - x * x + 1 / (x + 2) + 7;
+    }
+
+    function getXYPairs(): {x: number, y: number}[] {
+        const coordinates: {x: number, y: number}[] = [];
+        for (let i = 0; i < N_SAMPLES; ++i) {
+            const xi = X_MIN + i * (X_MAX - X_MIN)/(N_SAMPLES - 1);
+            const yi = f(xi);
+            coordinates.push({x: xi, y: yi});
+        }
+        return coordinates;
+    }
+
+    function mapX(x: number): number {
+        return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
+    }
+
+    function mapY(y: number): number {
+        return (Y_MAX - y) / (Y_MAX - Y_MIN) * canvas.height;  // Flipped sign
+    }
