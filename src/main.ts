@@ -29,14 +29,17 @@
 
     // ---- Basic timing state ----
     let lastTime = 0;
+    let segmentsDrawn = 0;
 
     // ---- Animation loop ----
     function animate(time: number) {
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
+        if (segmentsDrawn < COORDINATES.length)
+            segmentsDrawn += 1;
 
         update(deltaTime);
-        render();
+        render(segmentsDrawn);
 
         requestAnimationFrame(animate);
     }
@@ -51,7 +54,7 @@
     }
 
         // ---- Rendering logic (no state mutation here) ----
-    function render(): void {
+    function render(numSegments: number): void {
         // Clear
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -61,10 +64,11 @@
 
         ctx.beginPath();
         let inDrawableSpace = false; // A y value that is finite, real, and within the bounds of the canvas
-        let previousCoordinate: { x: number, y:number } | null = null;
+        let previousCoordinate: { x: number, y: number } | null = null;
 
         const yOutsideRange = (y: number) => !Number.isFinite(y) || y < Y_MIN || y > Y_MAX;
 
+        let numSegmentsDrawn = 0;
         for (const coordinate of COORDINATES) {
             let yIsValid = !yOutsideRange(coordinate.y);
             const xCanvas = mapX(coordinate.x);
@@ -100,6 +104,9 @@
                 }
             }
             previousCoordinate = {x: coordinate.x, y: coordinate.y};
+            numSegmentsDrawn += 1;
+            if (numSegmentsDrawn === numSegments)
+                break;
         };
         ctx.stroke();
     }
