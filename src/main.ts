@@ -9,6 +9,7 @@
     const Y_MIN = -10;
     const Y_MAX = 10;
     const N_SAMPLES = 1000;
+    const L = 1; // Fourier limits from 0 to L = 1.
     const COORDINATES = getXYPairs();
 
     // ---- Grab DOM elements ----
@@ -53,10 +54,17 @@
         void dt; // prevents an "unused parameter" warning until you use dt
     }
 
-        // ---- Rendering logic (no state mutation here) ----
+    // ---- Rendering logic (no state mutation here) ----
     function render(numSegments: number): void {
         // Clear
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw f(x)
+        ctx.beginPath();
+        ctx.strokeStyle = "#d70";
+        ctx.moveTo(mapX(-6), mapY(-6));
+        ctx.lineTo(mapX(6), mapY(6));
+        ctx.stroke();
 
         // Placeholder visuals so you know it's working
         ctx.strokeStyle = "#6cf";
@@ -123,7 +131,26 @@
 
     // Test function
     function f(x: number): number {
-        return Math.sin(5 * x) - x * x + 1 / (x + 2) + 7;
+        // return Math.sin(5 * x) - x * x + 1 / (x + 2) + 7;
+        // return fourier0Cosine(x) + fourier1Cosine(x) + fourier3Cosine(x);
+        return fourierSine(x, 1) + fourierSine(x, 2) + fourierSine(x, 3) + fourierSine(x, 4) + fourierSine(x, 5) + fourierSine(x, 6) + fourierSine(x, 7);
+    }
+
+    // 3 Fourier terms for f(x) = x:
+    function fourier0Cosine(x: number): number {
+        return L/2; // Does not depend on x; also cut in half as the first term is a_0/2.
+    }
+
+    function fourier1Cosine(x: number): number {
+        return -4*L/(Math.PI * Math.PI) * Math.cos(Math.PI * x / L);
+    }
+
+    function fourier3Cosine(x: number): number {
+        return -4*L/(9 * Math.PI * Math.PI) * Math.cos(3 * Math.PI * x / L);
+    }
+
+    function fourierSine(x: number, n: number): number {
+        return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
     }
 
     function getXYPairs(): {x: number, y: number}[] {
