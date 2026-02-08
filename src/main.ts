@@ -10,7 +10,8 @@
     const Y_MAX = 10;
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
-    const COORDINATES = getXYPairs(fTest);
+    //const COORDINATES = getXYPairs(fTest);
+    const FUNCTIONS: ((x:number) => number)[] = [(x: number) => x, (x: number) => fourierSine(x, 1), (x: number) => fourierSine(x, 2), (x: number) => fourierSine(x, 3), fTest];
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -31,13 +32,20 @@
     // ---- Basic timing state ----
     let lastTime = 0;
     let segmentsDrawn = 0;
+    let currentFunctionSegments = Infinity;
+    let functionsComplete = 0;
 
     // ---- Animation loop ----
     function animate(time: number) {
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
-        if (segmentsDrawn < COORDINATES.length)
+        if (segmentsDrawn < currentFunctionSegments - 1)
             segmentsDrawn += 1;
+        else {
+            functionsComplete += 1;
+            if (functionsComplete < FUNCTIONS.length)
+                segmentsDrawn = 1;
+        }
 
         update(deltaTime);
         render(segmentsDrawn);
@@ -74,7 +82,7 @@
         ctx.stroke();
     }
 
-    function drawFunctionOfX(numSegments: number): void {
+    function drawFunctionOfX(f: (x: number) => number, numSegments: number): void {
         ctx.strokeStyle = "#6cf";
         ctx.lineWidth = 2;
 
@@ -85,7 +93,7 @@
         const yOutsideRange = (y: number) => !Number.isFinite(y) || y < Y_MIN || y > Y_MAX;
 
         let numSegmentsDrawn = 0;
-        for (const coordinate of COORDINATES) {
+        for (const coordinate of getXYPairs(f)) {
             let yIsValid = !yOutsideRange(coordinate.y);
             const xCanvas = mapX(coordinate.x);
             const yCanvas = mapY(coordinate.y);
@@ -134,11 +142,25 @@
 
         drawAxes();
         drawF();
-        drawFunctionOfX(numSegments)
+        for (let completedFunctionIndex = 0; completedFunctionIndex < functionsComplete; ++completedFunctionIndex) {
+            // Fully draw all functions whose animations have been completed.
+            const currentFunction = FUNCTIONS[completedFunctionIndex];
+            if (currentFunction !== undefined) {
+                const coordinates = getXYPairs(currentFunction);
+                drawFunctionOfX(currentFunction, coordinates.length)
+            }
+        }
+        // Draw the partial part of the function currently being animated.
+        const currentFunction = FUNCTIONS[functionsComplete];
+        if (currentFunction !== undefined) {
+            drawFunctionOfX(currentFunction, numSegments)
+        }
 
     }
 
     // ---- Kick things off ----
+    if (FUNCTIONS.length >= 1 && FUNCTIONS[0] !== undefined)
+        currentFunctionSegments = getXYPairs(FUNCTIONS[0]).length;
     requestAnimationFrame(animate);
 
     // ---- Debug helper (optional) ----
