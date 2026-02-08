@@ -10,7 +10,7 @@
     const Y_MAX = 10;
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
-    const COORDINATES = getXYPairs();
+    const COORDINATES = getXYPairs(fTest);
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -54,12 +54,7 @@
         void dt; // prevents an "unused parameter" warning until you use dt
     }
 
-    // ---- Rendering logic (no state mutation here) ----
-    function render(numSegments: number): void {
-        // Clear
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw x- and y- axes
+    function drawAxes(): void {
         ctx.beginPath();
         ctx.strokeStyle = "#bbb";
         ctx.moveTo(mapX(X_MIN), mapY(0));
@@ -67,15 +62,19 @@
         ctx.moveTo(mapX(0), mapY(Y_MIN));
         ctx.lineTo(mapX(0), mapY(Y_MAX));
         ctx.stroke();
+    }
 
+    function drawF(): void {
         // Draw f(x)
+        // This will change and just be a call of drawFunctionOfX later.
         ctx.beginPath();
         ctx.strokeStyle = "#d70";
         ctx.moveTo(mapX(-6), mapY(-6));
         ctx.lineTo(mapX(6), mapY(6));
         ctx.stroke();
+    }
 
-        // Placeholder visuals so you know it's working
+    function drawFunctionOfX(numSegments: number): void {
         ctx.strokeStyle = "#6cf";
         ctx.lineWidth = 2;
 
@@ -128,6 +127,17 @@
         ctx.stroke();
     }
 
+    // ---- Rendering logic (no state mutation here) ----
+    function render(numSegments: number): void {
+        // Clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawAxes();
+        drawF();
+        drawFunctionOfX(numSegments)
+
+    }
+
     // ---- Kick things off ----
     requestAnimationFrame(animate);
 
@@ -139,7 +149,7 @@
     setStatus("Initialized");
 
     // Test function
-    function f(x: number): number {
+    function fTest(x: number): number {
         // return Math.sin(5 * x) - x * x + 1 / (x + 2) + 7;
         // return fourier0Cosine(x) + fourier1Cosine(x) + fourier3Cosine(x);
         return fourierSine(x, 1) + fourierSine(x, 2) + fourierSine(x, 3) + fourierSine(x, 4) + fourierSine(x, 5) + fourierSine(x, 6) + fourierSine(x, 7);
@@ -162,7 +172,7 @@
         return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
     }
 
-    function getXYPairs(): {x: number, y: number}[] {
+    function getXYPairs(f: (x: number) => number): {x: number, y: number}[] {
         const coordinates: {x: number, y: number}[] = [];
         for (let i = 0; i < N_SAMPLES; ++i) {
             const xi = X_MIN + i * (X_MAX - X_MIN)/(N_SAMPLES - 1);
