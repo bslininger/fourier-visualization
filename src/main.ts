@@ -59,6 +59,15 @@
         // Clear
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Draw x- and y- axes
+        ctx.beginPath();
+        ctx.strokeStyle = "#bbb";
+        ctx.moveTo(mapX(X_MIN), mapY(0));
+        ctx.lineTo(mapX(X_MAX), mapY(0));
+        ctx.moveTo(mapX(0), mapY(Y_MIN));
+        ctx.lineTo(mapX(0), mapY(Y_MAX));
+        ctx.stroke();
+
         // Draw f(x)
         ctx.beginPath();
         ctx.strokeStyle = "#d70";
