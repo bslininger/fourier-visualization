@@ -69,6 +69,17 @@
         ctx.lineTo(mapX(X_MAX), mapY(0));
         ctx.moveTo(mapX(0), mapY(Y_MIN));
         ctx.lineTo(mapX(0), mapY(Y_MAX));
+        const xTickStart = mapY(0);
+        const yTickStart = mapX(0);
+        const tickLength = 10;
+        for (let tick = Math.trunc(X_MIN); tick <= Math.trunc(X_MAX); ++tick) {
+            ctx.moveTo(mapX(tick), xTickStart);
+            ctx.lineTo(mapX(tick), xTickStart - tickLength);
+        }
+        for (let tick = Math.trunc(Y_MIN); tick <= Math.trunc(Y_MAX); ++tick) {
+            ctx.moveTo(yTickStart, mapY(tick));
+            ctx.lineTo(yTickStart + tickLength, mapY(tick));
+        }
         ctx.stroke();
     }
 
