@@ -3,6 +3,10 @@
     // Entry point for the application
     // ===============================
 
+    // Types
+    type Point = {x: number, y: number};
+    type FunctionAndCoordinates = {fn: (x: number) => number, coordinates: Point[]};
+
     // Constants
     const X_MIN = -6;
     const X_MAX = 6;
@@ -11,7 +15,13 @@
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
     //const COORDINATES = getXYPairs(fTest);
-    const FUNCTIONS: ((x:number) => number)[] = [(x: number) => x, (x: number) => fourierSine(x, 1), (x: number) => fourierSine(x, 2), (x: number) => fourierSine(x, 3), fTest];
+    const FUNCTIONS: ((x: number) => number)[] = [(x: number) => x, (x: number) => fourierSine(x, 1), (x: number) => fourierSine(x, 2), (x: number) => fourierSine(x, 3), fTest];
+    
+    // Create object of given functions (from const FUNCTIONS array) and their coordinates.
+    const FUNCTIONS_AND_COORDINATES: FunctionAndCoordinates[] = FUNCTIONS.map(givenFunction => ({
+        fn: givenFunction,
+        coordinates: getXYPairs(givenFunction)
+    }))
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -93,7 +103,7 @@
         ctx.stroke();
     }
 
-    function drawFunctionOfX(f: (x: number) => number, numSegments: number): void {
+    function drawFunctionOfX(coordinates: Point[], numSegments: number): void {
         ctx.strokeStyle = "#6cf";
         ctx.lineWidth = 2;
 
@@ -104,7 +114,7 @@
         const yOutsideRange = (y: number) => !Number.isFinite(y) || y < Y_MIN || y > Y_MAX;
 
         let numSegmentsDrawn = 0;
-        for (const coordinate of getXYPairs(f)) {
+        for (const coordinate of coordinates) {
             let yIsValid = !yOutsideRange(coordinate.y);
             const xCanvas = mapX(coordinate.x);
             const yCanvas = mapY(coordinate.y);
@@ -155,23 +165,22 @@
         drawF();
         for (let completedFunctionIndex = 0; completedFunctionIndex < functionsComplete; ++completedFunctionIndex) {
             // Fully draw all functions whose animations have been completed.
-            const currentFunction = FUNCTIONS[completedFunctionIndex];
+            const currentFunction = FUNCTIONS_AND_COORDINATES[completedFunctionIndex];
             if (currentFunction !== undefined) {
-                const coordinates = getXYPairs(currentFunction);
-                drawFunctionOfX(currentFunction, coordinates.length)
+                drawFunctionOfX(currentFunction.coordinates, currentFunction.coordinates.length)
             }
         }
         // Draw the partial part of the function currently being animated.
-        const currentFunction = FUNCTIONS[functionsComplete];
+        const currentFunction = FUNCTIONS_AND_COORDINATES[functionsComplete];
         if (currentFunction !== undefined) {
-            drawFunctionOfX(currentFunction, numSegments)
+            drawFunctionOfX(currentFunction.coordinates, numSegments)
         }
 
     }
 
     // ---- Kick things off ----
-    if (FUNCTIONS.length >= 1 && FUNCTIONS[0] !== undefined)
-        currentFunctionSegments = getXYPairs(FUNCTIONS[0]).length;
+    if (FUNCTIONS_AND_COORDINATES.length >= 1 && FUNCTIONS_AND_COORDINATES[0] !== undefined)
+        currentFunctionSegments = FUNCTIONS_AND_COORDINATES[0].coordinates.length;
     requestAnimationFrame(animate);
 
     // ---- Debug helper (optional) ----
@@ -205,8 +214,8 @@
         return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
     }
 
-    function getXYPairs(f: (x: number) => number): {x: number, y: number}[] {
-        const coordinates: {x: number, y: number}[] = [];
+    function getXYPairs(f: (x: number) => number): Point[] {
+        const coordinates: Point[] = [];
         for (let i = 0; i < N_SAMPLES; ++i) {
             const xi = X_MIN + i * (X_MAX - X_MIN)/(N_SAMPLES - 1);
             const yi = f(xi);
