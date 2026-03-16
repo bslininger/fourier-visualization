@@ -29,8 +29,8 @@
     // Constants
     const X_MIN = -6;
     const X_MAX = 6;
-    const Y_MIN = -10;
-    const Y_MAX = 10;
+    const Y_MIN = -2;
+    const Y_MAX = 2;
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
 
@@ -64,12 +64,33 @@
     function animate(time: number) {
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
-        if (segmentsDrawn < currentFunctionSegments - 1)
-            segmentsDrawn += 1;
-        else {
-            currentFourierN += 1;
+        if (animationPhase === Phase.Between)
+            incrementPhase();
+        else if (animationPhase === Phase.NextComponent) {
+            if (segmentsDrawn < currentFunctionSegments - 1)
+                segmentsDrawn += 1;
+            else {
+                if (currentFourierN === 1) {
+                    setPhase(Phase.Between)
+                    partialFourierSum.fn = currentFourierComponent.fn;
+                    partialFourierSum.coordinates = currentFourierComponent.coordinates;
+                    currentFourierN += 1;
+                    segmentsDrawn = 0;
+                    currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+                    currentFourierComponent = {fn: currentFourierComponentFunction, coordinates: getXYPairs(currentFourierComponentFunction)};
+                    currentFunctionSegments = currentFourierComponent.coordinates.length;
+                }
+                else {
+                    // TODO: Get correct new partial Fourier function and calculate coordinates with it.
+                    incrementPhase();
+                }
+            }
+        }
+        else if (animationPhase === Phase.AddVertical) {
+
         }
 
+        setStatus("Segments drawn:  " + segmentsDrawn);
         update(deltaTime);
         render(segmentsDrawn);
 
@@ -116,8 +137,8 @@
         ctx.stroke();
     }
 
-    function drawFunctionOfX(coordinates: Point[], numSegments: number): void {
-        ctx.strokeStyle = "#6cf";
+    function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string): void {
+        ctx.strokeStyle = color;
         ctx.lineWidth = 2;
 
         ctx.beginPath();
@@ -171,10 +192,12 @@
 
     function incrementPhase(): void {
         animationPhase = nextPhase[animationPhase];
+        setStatus(animationPhase + "; N = " + currentFourierN);
     }
 
     function setPhase(newPhase: Phase) : void {
         animationPhase = newPhase;
+        setStatus(animationPhase + "; N = " + currentFourierN);
     }
 
     // ---- Rendering logic (no state mutation here) ----
@@ -184,11 +207,10 @@
 
         drawAxes();
         drawF();
-        // If partial sum exists, draw it
-        // Otherwise skip this
         if (partialFourierSum.coordinates.length > 0)
-            drawFunctionOfX(partialFourierSum.coordinates, partialFourierSum.coordinates.length);
-        drawFunctionOfX(currentFourierComponent.coordinates, numSegments);
+            drawFunctionOfX(partialFourierSum.coordinates, partialFourierSum.coordinates.length, "#3d7");
+
+        drawFunctionOfX(currentFourierComponent.coordinates, numSegments, "#6cf");
     }
 
     // ---- Kick things off ----
