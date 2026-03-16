@@ -7,6 +7,25 @@
     type Point = {x: number, y: number};
     type FunctionAndCoordinates = {fn: (x: number) => number, coordinates: Point[]};
 
+    // Animation phase enum
+    enum Phase {
+        Between = "Pause between functions",
+        NextComponent = "Drawing next component function",
+        AddVertical = "Adding vertical lines from x-axis to component function",
+        MoveVertical = "Moving vertical lines to partial sum function",
+        NewPartialSum = "Drawing new partial sum",
+        Fadeout = "Fading old lines away"
+    }
+
+    const nextPhase: Record<Phase, Phase> = {
+        [Phase.Between]:       Phase.NextComponent,
+        [Phase.NextComponent]: Phase.AddVertical,
+        [Phase.AddVertical]:   Phase.MoveVertical,
+        [Phase.MoveVertical]:  Phase.NewPartialSum,
+        [Phase.NewPartialSum]: Phase.Fadeout,
+        [Phase.Fadeout]:       Phase.Between
+    };
+
     // Constants
     const X_MIN = -6;
     const X_MAX = 6;
@@ -14,14 +33,6 @@
     const Y_MAX = 10;
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
-    //const COORDINATES = getXYPairs(fTest);
-    const FUNCTIONS: ((x: number) => number)[] = [(x: number) => x, (x: number) => fourierSine(x, 1), (x: number) => fourierSine(x, 2), (x: number) => fourierSine(x, 3), fTest];
-    
-    // Create object of given functions (from const FUNCTIONS array) and their coordinates.
-    const FUNCTIONS_AND_COORDINATES: FunctionAndCoordinates[] = FUNCTIONS.map(givenFunction => ({
-        fn: givenFunction,
-        coordinates: getXYPairs(givenFunction)
-    }))
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -39,11 +50,15 @@
     // Optional status line
     const statusElement = document.getElementById("status");
 
-    // ---- Basic timing state ----
+    // ---- State-tracking variables ----
     let lastTime = 0;
     let segmentsDrawn = 0;
     let currentFunctionSegments = Infinity;
-    let functionsComplete = 0;
+    let currentFourierN = 0;
+    let partialFourierSum: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
+    let currentFourierComponentFunction: (x: number) => number = (x) => 0;
+    let currentFourierComponent: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
+    let animationPhase = Phase.Between;
 
     // ---- Animation loop ----
     function animate(time: number) {
@@ -52,9 +67,7 @@
         if (segmentsDrawn < currentFunctionSegments - 1)
             segmentsDrawn += 1;
         else {
-            functionsComplete += 1;
-            if (functionsComplete < FUNCTIONS.length)
-                segmentsDrawn = 1;
+            currentFourierN += 1;
         }
 
         update(deltaTime);
@@ -156,6 +169,14 @@
         ctx.stroke();
     }
 
+    function incrementPhase(): void {
+        animationPhase = nextPhase[animationPhase];
+    }
+
+    function setPhase(newPhase: Phase) : void {
+        animationPhase = newPhase;
+    }
+
     // ---- Rendering logic (no state mutation here) ----
     function render(numSegments: number): void {
         // Clear
@@ -163,24 +184,18 @@
 
         drawAxes();
         drawF();
-        for (let completedFunctionIndex = 0; completedFunctionIndex < functionsComplete; ++completedFunctionIndex) {
-            // Fully draw all functions whose animations have been completed.
-            const currentFunction = FUNCTIONS_AND_COORDINATES[completedFunctionIndex];
-            if (currentFunction !== undefined) {
-                drawFunctionOfX(currentFunction.coordinates, currentFunction.coordinates.length)
-            }
-        }
-        // Draw the partial part of the function currently being animated.
-        const currentFunction = FUNCTIONS_AND_COORDINATES[functionsComplete];
-        if (currentFunction !== undefined) {
-            drawFunctionOfX(currentFunction.coordinates, numSegments)
-        }
-
+        // If partial sum exists, draw it
+        // Otherwise skip this
+        if (partialFourierSum.coordinates.length > 0)
+            drawFunctionOfX(partialFourierSum.coordinates, partialFourierSum.coordinates.length);
+        drawFunctionOfX(currentFourierComponent.coordinates, numSegments);
     }
 
     // ---- Kick things off ----
-    if (FUNCTIONS_AND_COORDINATES.length >= 1 && FUNCTIONS_AND_COORDINATES[0] !== undefined)
-        currentFunctionSegments = FUNCTIONS_AND_COORDINATES[0].coordinates.length;
+    currentFourierN = 1;
+    currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+    currentFourierComponent = {fn: currentFourierComponentFunction, coordinates: getXYPairs(currentFourierComponentFunction)};
+    currentFunctionSegments = currentFourierComponent.coordinates.length;
     requestAnimationFrame(animate);
 
     // ---- Debug helper (optional) ----
