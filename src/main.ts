@@ -33,6 +33,8 @@
     const Y_MAX = 2;
     const N_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
+    const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
+    const VERTICAL_BAR_STEP = 5;
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -54,6 +56,7 @@
     let lastTime = 0;
     let segmentsDrawn = 0;
     let currentFunctionSegments = Infinity;
+    let verticalBarCurrentSegment = 0;
     let currentFourierN = 0;
     let partialFourierSum: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
     let currentFourierComponentFunction: (x: number) => number = (x) => 0;
@@ -87,7 +90,9 @@
             }
         }
         else if (animationPhase === Phase.AddVertical) {
-
+            if (verticalBarCurrentSegment < currentFunctionSegments - VERTICAL_BAR_STEP) {
+                verticalBarCurrentSegment += VERTICAL_BAR_STEP;
+            }
         }
 
         setStatus("Segments drawn:  " + segmentsDrawn);
@@ -190,6 +195,15 @@
         ctx.stroke();
     }
 
+    function drawVerticalBar(functionValue: Point) {
+        ctx.beginPath();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#ff0";
+        ctx.moveTo(mapX(functionValue.x), mapY(0));
+        ctx.lineTo(mapX(functionValue.x), mapY(functionValue.y));
+        ctx.stroke();
+    }
+
     function incrementPhase(): void {
         animationPhase = nextPhase[animationPhase];
         setStatus(animationPhase + "; N = " + currentFourierN);
@@ -211,6 +225,14 @@
             drawFunctionOfX(partialFourierSum.coordinates, partialFourierSum.coordinates.length, "#3d7");
 
         drawFunctionOfX(currentFourierComponent.coordinates, numSegments, "#6cf");
+
+        for (let verticalBarIndex = VERTICAL_BAR_OFFSET; verticalBarIndex <= verticalBarCurrentSegment; verticalBarIndex += VERTICAL_BAR_STEP) {
+            // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
+            // This keeps the animation speed slower, matching the speed of drawing the graphs of the functions
+            const verticalBarPoint = currentFourierComponent.coordinates[verticalBarIndex];
+            if (verticalBarPoint !== undefined)
+                drawVerticalBar(verticalBarPoint)
+        }
     }
 
     // ---- Kick things off ----
@@ -218,6 +240,7 @@
     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
     currentFourierComponent = {fn: currentFourierComponentFunction, coordinates: getXYPairs(currentFourierComponentFunction)};
     currentFunctionSegments = currentFourierComponent.coordinates.length;
+    verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
     requestAnimationFrame(animate);
 
     // ---- Debug helper (optional) ----
