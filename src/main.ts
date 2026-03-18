@@ -35,6 +35,7 @@
     const L = 1; // Fourier limits from 0 to L = 1.
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
     const VERTICAL_BAR_STEP = 5;
+    const VERTICAL_BAR_ANIMATION_FRAMES = 300;
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -61,6 +62,7 @@
     let partialFourierSum: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
     let currentFourierComponentFunction: (x: number) => number = (x) => 0;
     let currentFourierComponent: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
+    let verticalBarAnimationFramesDrawn = 0;
     let animationPhase = Phase.Between;
 
     // ---- Animation loop ----
@@ -93,9 +95,18 @@
             if (verticalBarCurrentSegment < currentFunctionSegments - VERTICAL_BAR_STEP) {
                 verticalBarCurrentSegment += VERTICAL_BAR_STEP;
             }
+            else
+                incrementPhase();
         }
 
-        setStatus("Segments drawn:  " + segmentsDrawn);
+        else if (animationPhase === Phase.MoveVertical) {
+            if (verticalBarAnimationFramesDrawn < VERTICAL_BAR_ANIMATION_FRAMES)
+                verticalBarAnimationFramesDrawn += 1;
+            else
+                incrementPhase();
+        }
+
+        // setStatus("Segments drawn:  " + segmentsDrawn);
         update(deltaTime);
         render(segmentsDrawn);
 
@@ -195,12 +206,13 @@
         ctx.stroke();
     }
 
-    function drawVerticalBar(functionValue: Point) {
+    function drawVerticalBar(componentFunctionPoint: Point, partialSumFunctionPoint: Point) {
+        const distanceToMove = partialSumFunctionPoint.y * (verticalBarAnimationFramesDrawn / VERTICAL_BAR_ANIMATION_FRAMES);
         ctx.beginPath();
         ctx.lineWidth = 1;
         ctx.strokeStyle = "#ff0";
-        ctx.moveTo(mapX(functionValue.x), mapY(0));
-        ctx.lineTo(mapX(functionValue.x), mapY(functionValue.y));
+        ctx.moveTo(mapX(componentFunctionPoint.x), mapY(distanceToMove));
+        ctx.lineTo(mapX(componentFunctionPoint.x), mapY(componentFunctionPoint.y + distanceToMove));
         ctx.stroke();
     }
 
@@ -229,9 +241,10 @@
         for (let verticalBarIndex = VERTICAL_BAR_OFFSET; verticalBarIndex <= verticalBarCurrentSegment; verticalBarIndex += VERTICAL_BAR_STEP) {
             // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
             // This keeps the animation speed slower, matching the speed of drawing the graphs of the functions
-            const verticalBarPoint = currentFourierComponent.coordinates[verticalBarIndex];
-            if (verticalBarPoint !== undefined)
-                drawVerticalBar(verticalBarPoint)
+            const componentFunctionPoint = currentFourierComponent.coordinates[verticalBarIndex];
+            const partialSumFunctionPoint = partialFourierSum.coordinates[verticalBarIndex];
+            if (componentFunctionPoint !== undefined && partialSumFunctionPoint !== undefined)
+                drawVerticalBar(componentFunctionPoint, partialSumFunctionPoint)
         }
     }
 
