@@ -5,7 +5,6 @@
 
     // Types
     type Point = {x: number, y: number};
-    type FunctionAndCoordinates = {fn: (x: number) => number, coordinates: Point[]};
 
     // Animation phase enum
     enum Phase {
@@ -61,11 +60,10 @@
     let newPartialFourierSumSegments = Infinity;
     let verticalBarCurrentSegment = 0;
     let currentFourierN = 0;
-    let partialFourierSum: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
-    //let newPartialFourierSum: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
+    let partialFourierSumCoordinates: Point[] = [];
     let newPartialFourierSumCoordinates: Point[] = [];
     let currentFourierComponentFunction: (x: number) => number = (x) => 0;
-    let currentFourierComponent: FunctionAndCoordinates = {fn: (x) => 0, coordinates: []};
+    let currentFourierComponentCoordinates: Point[] = [];
     let verticalBarAnimationFramesDrawn = 0;
     let animationPhase = Phase.Between;
 
@@ -81,13 +79,13 @@
             else {
                 if (currentFourierN === 1) {
                     setPhase(Phase.Between)
-                    partialFourierSum.fn = currentFourierComponent.fn;
-                    partialFourierSum.coordinates = currentFourierComponent.coordinates;
+                    //partialFourierSum.fn = currentFourierComponent.fn;
+                    partialFourierSumCoordinates = currentFourierComponentCoordinates;
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
                     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                    currentFourierComponent = {fn: currentFourierComponentFunction, coordinates: getXYPairs(currentFourierComponentFunction)};
-                    currentFunctionSegments = currentFourierComponent.coordinates.length;
+                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+                    currentFunctionSegments = currentFourierComponentCoordinates.length;
                 }
                 else {
                     // TODO: Get correct new partial Fourier function and calculate coordinates with it. (Actually do this in a later phase; we need this after MoveVertical)
@@ -107,7 +105,7 @@
             if (verticalBarAnimationFramesDrawn < VERTICAL_BAR_ANIMATION_FRAMES)
                 verticalBarAnimationFramesDrawn += 1;
             else {
-                newPartialFourierSumCoordinates = partialFourierSum.coordinates.map((point, i) => ({x: point.x, y: point.y + currentFourierComponent.coordinates[i]!.y}));
+                newPartialFourierSumCoordinates = partialFourierSumCoordinates.map((point, i) => ({x: point.x, y: point.y + currentFourierComponentCoordinates[i]!.y}));
                 newPartialFourierSumSegments = newPartialFourierSumCoordinates.length;
                 incrementPhase();
             }
@@ -245,16 +243,16 @@
 
         drawAxes();
         drawF();
-        if (partialFourierSum.coordinates.length > 0)
-            drawFunctionOfX(partialFourierSum.coordinates, partialFourierSum.coordinates.length, "#3d7");
+        if (partialFourierSumCoordinates.length > 0)
+            drawFunctionOfX(partialFourierSumCoordinates, partialFourierSumCoordinates.length, "#3d7");
 
-        drawFunctionOfX(currentFourierComponent.coordinates, currentFunctionSegmentsDrawn, "#6cf");
+        drawFunctionOfX(currentFourierComponentCoordinates, currentFunctionSegmentsDrawn, "#6cf");
 
         for (let verticalBarIndex = VERTICAL_BAR_OFFSET; verticalBarIndex <= verticalBarCurrentSegment; verticalBarIndex += VERTICAL_BAR_STEP) {
             // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
             // This keeps the animation speed slower, matching the speed of drawing the graphs of the functions
-            const componentFunctionPoint = currentFourierComponent.coordinates[verticalBarIndex];
-            const partialSumFunctionPoint = partialFourierSum.coordinates[verticalBarIndex];
+            const componentFunctionPoint = currentFourierComponentCoordinates[verticalBarIndex];
+            const partialSumFunctionPoint = partialFourierSumCoordinates[verticalBarIndex];
             if (componentFunctionPoint !== undefined && partialSumFunctionPoint !== undefined)
                 drawVerticalBar(componentFunctionPoint, partialSumFunctionPoint)
         }
@@ -266,8 +264,8 @@
     // ---- Kick things off ----
     currentFourierN = 1;
     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-    currentFourierComponent = {fn: currentFourierComponentFunction, coordinates: getXYPairs(currentFourierComponentFunction)};
-    currentFunctionSegments = currentFourierComponent.coordinates.length;
+    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+    currentFunctionSegments = currentFourierComponentCoordinates.length;
     verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
     requestAnimationFrame(animate);
 
