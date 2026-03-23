@@ -78,8 +78,9 @@
     function animate(time: number) {
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
-        if (animationPhase === Phase.Between)
+        if (animationPhase === Phase.Between) {
             incrementPhase();
+        }
         else if (animationPhase === Phase.NextComponent) {
             if (currentFunctionSegmentsDrawn < currentFunctionSegments - 1)
                 currentFunctionSegmentsDrawn += 1;
@@ -131,11 +132,18 @@
         else if (animationPhase === Phase.Fadeout2) {
             fadeout2FrameCount += 1;
             if (fadeout2FrameCount === FADEOUT_FRAMES) {
+                currentFourierN += 1;
                 currentFunctionSegmentsDrawn = 0;
+                currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+                currentFunctionSegments = currentFourierComponentCoordinates.length;
+                verticalBarAnimationFramesDrawn = 0;
                 verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
                 fadeout2FrameCount = 0;
                 partialFourierSumCoordinates = newPartialFourierSumCoordinates;
-                //incrementPhase();
+                newPartialFourierSumSegmentsDrawn = 0;
+                newPartialFourierSumCoordinates = [];
+                incrementPhase();
             }
         }
 
@@ -305,10 +313,11 @@
                 drawVerticalBar(componentFunctionPoint, partialSumFunctionPoint, fadeout2Alpha)
         }
 
-        if (newPartialFourierSumCoordinates.length > 0)
+        if (newPartialFourierSumCoordinates.length > 0) {
             if (fadeout2FrameCount > 0)
                 drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#3d7", 1);
             drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#91b", fadeout2Alpha);
+        }
     }
 
     // ---- Kick things off ----
