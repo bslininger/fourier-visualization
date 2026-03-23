@@ -21,7 +21,7 @@
     const nextPhase: Record<Phase, Phase> = {
         [Phase.Between]:          Phase.NextComponent,
         [Phase.NextComponent]:    Phase.AddVertical,
-        [Phase.AddVertical]:      Phase.MoveVertical,
+        [Phase.AddVertical]:      Phase.Fadeout1,
         [Phase.Fadeout1]:         Phase.MoveVertical,
         [Phase.MoveVertical]:     Phase.NewPartialSum,
         [Phase.NewPartialSum]:    Phase.Fadeout2,
@@ -101,6 +101,15 @@
                 incrementPhase();
         }
 
+        else if (animationPhase === Phase.Fadeout1) {
+            fadeout1Frame += 1;
+            if (fadeout1Frame === FADEOUT_FRAMES) {
+                currentFunctionSegmentsDrawn = 0;
+                fadeout1Frame = 0;
+                incrementPhase();
+            }
+        }
+
         else if (animationPhase === Phase.MoveVertical) {
             if (verticalBarAnimationFramesDrawn < VERTICAL_BAR_ANIMATION_FRAMES)
                 verticalBarAnimationFramesDrawn += 1;
@@ -122,7 +131,7 @@
             fadeout1Frame += 1;
             if (fadeout1Frame === FADEOUT_FRAMES) {
                 currentFourierN += 1;
-                currentFunctionSegmentsDrawn = 1;
+                currentFunctionSegmentsDrawn = 0;
                 currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
                 currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
                 currentFunctionSegments = currentFourierComponentCoordinates.length;
@@ -131,7 +140,7 @@
             }
         }
 
-        // setStatus("Segments drawn:  " + segmentsDrawn);
+        setStatus("Segments drawn:  " + currentFunctionSegmentsDrawn);
         update(deltaTime);
         render();
 
@@ -179,6 +188,8 @@
     }
 
     function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string, alpha: number): void {
+        if (numSegments < 1)
+            return;
         ctx.save();
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
