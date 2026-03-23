@@ -11,18 +11,22 @@
         Between = "Pause between functions",
         NextComponent = "Drawing next component function",
         AddVertical = "Adding vertical lines from x-axis to component function",
+        Fadeout1 = "Fading component function away",
         MoveVertical = "Moving vertical lines to partial sum function",
         NewPartialSum = "Drawing new partial sum",
-        Fadeout = "Fading old lines away"
+        Fadeout2 = "Fading old partial sum and vertical lines away",
+        FadeoutFirstLoop = "Fading first component function into the partial sum's color"
     }
 
     const nextPhase: Record<Phase, Phase> = {
-        [Phase.Between]:       Phase.NextComponent,
-        [Phase.NextComponent]: Phase.AddVertical,
-        [Phase.AddVertical]:   Phase.MoveVertical,
-        [Phase.MoveVertical]:  Phase.NewPartialSum,
-        [Phase.NewPartialSum]: Phase.Fadeout,
-        [Phase.Fadeout]:       Phase.Between
+        [Phase.Between]:          Phase.NextComponent,
+        [Phase.NextComponent]:    Phase.AddVertical,
+        [Phase.AddVertical]:      Phase.MoveVertical,
+        [Phase.Fadeout1]:         Phase.MoveVertical,
+        [Phase.MoveVertical]:     Phase.NewPartialSum,
+        [Phase.NewPartialSum]:    Phase.Fadeout2,
+        [Phase.Fadeout2]:         Phase.Between,
+        [Phase.FadeoutFirstLoop]: Phase.Between
     };
 
     // Constants
@@ -35,6 +39,7 @@
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
     const VERTICAL_BAR_STEP = 5;
     const VERTICAL_BAR_ANIMATION_FRAMES = 300;
+    const FADEOUT_FRAMES = 300;
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -65,6 +70,7 @@
     let currentFourierComponentFunction: (x: number) => number = (x) => 0;
     let currentFourierComponentCoordinates: Point[] = [];
     let verticalBarAnimationFramesDrawn = 0;
+    let fadeout1Frame = 0;
     let animationPhase = Phase.Between;
 
     // ---- Animation loop ----
@@ -78,14 +84,8 @@
                 currentFunctionSegmentsDrawn += 1;
             else {
                 if (currentFourierN === 1) {
-                    setPhase(Phase.Between)
-                    //partialFourierSum.fn = currentFourierComponent.fn;
                     partialFourierSumCoordinates = currentFourierComponentCoordinates;
-                    currentFourierN += 1;
-                    currentFunctionSegmentsDrawn = 0;
-                    currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
-                    currentFunctionSegments = currentFourierComponentCoordinates.length;
+                    setPhase(Phase.FadeoutFirstLoop);
                 }
                 else {
                     // TODO: Get correct new partial Fourier function and calculate coordinates with it. (Actually do this in a later phase; we need this after MoveVertical)
@@ -114,6 +114,21 @@
         else if (animationPhase === Phase.NewPartialSum) {
             if (newPartialFourierSumSegmentsDrawn < newPartialFourierSumSegments)
                 newPartialFourierSumSegmentsDrawn += 1;
+        }
+
+        else if (animationPhase === Phase.FadeoutFirstLoop) {
+            currentFunctionSegmentsDrawn = currentFourierComponentCoordinates.length;
+            newPartialFourierSumSegmentsDrawn = newPartialFourierSumCoordinates.length;
+            fadeout1Frame += 1;
+            if (fadeout1Frame === FADEOUT_FRAMES) {
+                currentFourierN += 1;
+                currentFunctionSegmentsDrawn = 1;
+                currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+                currentFunctionSegments = currentFourierComponentCoordinates.length;
+                fadeout1Frame = 0;
+                incrementPhase();
+            }
         }
 
         // setStatus("Segments drawn:  " + segmentsDrawn);
@@ -163,9 +178,11 @@
         ctx.stroke();
     }
 
-    function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string): void {
+    function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string, alpha: number): void {
+        ctx.save();
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
+        ctx.globalAlpha = alpha;
 
         ctx.beginPath();
         let inDrawableSpace = false; // A y value that is finite, real, and within the bounds of the canvas
@@ -214,6 +231,7 @@
                 break;
         };
         ctx.stroke();
+        ctx.restore();
     }
 
     function drawVerticalBar(componentFunctionPoint: Point, partialSumFunctionPoint: Point) {
@@ -243,10 +261,11 @@
 
         drawAxes();
         drawF();
+        let fadeout1Alpha = 1 - fadeout1Frame / FADEOUT_FRAMES;
         if (partialFourierSumCoordinates.length > 0)
-            drawFunctionOfX(partialFourierSumCoordinates, partialFourierSumCoordinates.length, "#3d7");
+            drawFunctionOfX(partialFourierSumCoordinates, partialFourierSumCoordinates.length, "#3d7", 1);
 
-        drawFunctionOfX(currentFourierComponentCoordinates, currentFunctionSegmentsDrawn, "#6cf");
+        drawFunctionOfX(currentFourierComponentCoordinates, currentFunctionSegmentsDrawn, "#6cf", fadeout1Alpha);
 
         for (let verticalBarIndex = VERTICAL_BAR_OFFSET; verticalBarIndex <= verticalBarCurrentSegment; verticalBarIndex += VERTICAL_BAR_STEP) {
             // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
@@ -258,7 +277,7 @@
         }
 
         if (newPartialFourierSumCoordinates.length > 0)
-            drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#f00");
+            drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#f00", 1);
     }
 
     // ---- Kick things off ----
