@@ -3,6 +3,9 @@
     // Entry point for the application
     // ===============================
 
+    import { create, all, type MathNode, type EvalFunction } from "mathjs";
+    const math = create(all!);
+
     // Types
     type Point = {x: number, y: number};
 
@@ -297,6 +300,10 @@
 
         drawAxes();
         drawF();
+        const expr: MathNode = math.parse("x^2");
+        const compiled: EvalFunction = expr.compile();
+        const xSquaredCoordinates: Point[] = getXYPairs((x) => compiled.evaluate({ x }));
+        drawFunctionOfX(xSquaredCoordinates, xSquaredCoordinates.length, "#0ff", 1);
         let fadeout1Alpha = 1 - fadeout1FrameCount / FADEOUT_FRAMES;
         let fadeout2Alpha = 1 - fadeout2FrameCount / FADEOUT_FRAMES;
         if (partialFourierSumCoordinates.length > 0)
