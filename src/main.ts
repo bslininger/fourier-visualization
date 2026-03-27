@@ -206,16 +206,6 @@
         ctx.stroke();
     }
 
-    function drawF(): void {
-        // Draw f(x)
-        // This will change and just be a call of drawFunctionOfX later.
-        ctx.beginPath();
-        ctx.strokeStyle = "#d70";
-        ctx.moveTo(mapX(-6), mapY(-6));
-        ctx.lineTo(mapX(6), mapY(6));
-        ctx.stroke();
-    }
-
     function getFCoordinates(xMin: number, xMax: number, numberOfPoints: number) : Point[] {
         const expression: MathNode = math.parse(FUNCTION_STRING);
         const compiledExpression: EvalFunction = expression.compile();
@@ -348,29 +338,8 @@
 
     setStatus("Initialized");
 
-    // Test function
-    function fTest(x: number): number {
-        // return Math.sin(5 * x) - x * x + 1 / (x + 2) + 7;
-        // return fourier0Cosine(x) + fourier1Cosine(x) + fourier3Cosine(x);
-        return fourierSine(x, 1) + fourierSine(x, 2) + fourierSine(x, 3) + fourierSine(x, 4) + fourierSine(x, 5) + fourierSine(x, 6) + fourierSine(x, 7);
-    }
-
-    // 3 Fourier terms for f(x) = x:
-    function fourier0Cosine(x: number): number {
-        return L/2; // Does not depend on x; also cut in half as the first term is a_0/2.
-    }
-
-    function fourier1Cosine(x: number): number {
-        return -4*L/(Math.PI * Math.PI) * Math.cos(Math.PI * x / L);
-    }
-
-    function fourier3Cosine(x: number): number {
-        return -4*L/(9 * Math.PI * Math.PI) * Math.cos(3 * Math.PI * x / L);
-    }
-
     function fourierSine(x: number, n: number): number {
         return fourierTermCoefficient(F_0_TO_L_COORDINATES, n) * Math.sin(n * Math.PI * x / L);
-        //return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
     }
 
     function simpson(left: Point, center: Point, right: Point, n: number): number {
