@@ -33,16 +33,20 @@
     };
 
     // Constants
-    const X_MIN = -6;
-    const X_MAX = 6;
+    const X_MIN = -2;
+    const X_MAX = 2;
     const Y_MIN = -2;
     const Y_MAX = 2;
-    const N_SAMPLES = 1000;
+    const COUNT_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
     const VERTICAL_BAR_STEP = 5;
     const VERTICAL_BAR_ANIMATION_FRAMES = 300;
     const FADEOUT_FRAMES = 300;
+    const FUNCTION_STRING = "(x-1)^2 + 1/2";
+    const F_COORDINATES = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES);
+    const COUNT_0_TO_L_SAMPLES = 501;
+    const F_0_TO_L_COORDINATES = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES);
 
     // ---- Grab DOM elements ----
     const canvasElement = document.getElementById("graph");
@@ -138,7 +142,7 @@
                 currentFourierN += 1;
                 currentFunctionSegmentsDrawn = 0;
                 currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
                 currentFunctionSegments = currentFourierComponentCoordinates.length;
                 verticalBarAnimationFramesDrawn = 0;
                 verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
@@ -158,7 +162,7 @@
                 currentFourierN += 1;
                 currentFunctionSegmentsDrawn = 0;
                 currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
                 currentFunctionSegments = currentFourierComponentCoordinates.length;
                 fadeout1FrameCount = 0;
                 incrementPhase();
@@ -210,6 +214,12 @@
         ctx.moveTo(mapX(-6), mapY(-6));
         ctx.lineTo(mapX(6), mapY(6));
         ctx.stroke();
+    }
+
+    function getFCoordinates(xMin: number, xMax: number, numberOfPoints: number) : Point[] {
+        const expression: MathNode = math.parse(FUNCTION_STRING);
+        const compiledExpression: EvalFunction = expression.compile();
+        return getXYPairs((x) => compiledExpression.evaluate({ x }), xMin, xMax, numberOfPoints);
     }
 
     function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string, alpha: number): void {
@@ -299,11 +309,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         drawAxes();
-        drawF();
-        const expr: MathNode = math.parse("x^2");
-        const compiled: EvalFunction = expr.compile();
-        const xSquaredCoordinates: Point[] = getXYPairs((x) => compiled.evaluate({ x }));
-        drawFunctionOfX(xSquaredCoordinates, xSquaredCoordinates.length, "#0ff", 1);
+        drawFunctionOfX(F_COORDINATES, F_COORDINATES.length, "#d70", 1);
         let fadeout1Alpha = 1 - fadeout1FrameCount / FADEOUT_FRAMES;
         let fadeout2Alpha = 1 - fadeout2FrameCount / FADEOUT_FRAMES;
         if (partialFourierSumCoordinates.length > 0)
@@ -330,7 +336,7 @@
     // ---- Kick things off ----
     currentFourierN = 1;
     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction);
+    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
     currentFunctionSegments = currentFourierComponentCoordinates.length;
     verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
     requestAnimationFrame(animate);
@@ -363,13 +369,38 @@
     }
 
     function fourierSine(x: number, n: number): number {
-        return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
+        return fourierTermCoefficient(F_0_TO_L_COORDINATES, n) * Math.sin(n * Math.PI * x / L);
+        //return (n % 2 === 0 ? -1 : 1) * (2 * L / (n * Math.PI)) * Math.sin(n * Math.PI * x / L);
     }
 
-    function getXYPairs(f: (x: number) => number): Point[] {
+    function simpson(left: Point, center: Point, right: Point, n: number): number {
+        // Calculates the Simpson's rule numerical integral for a Fourier coefficient, given a panel of 3 points equally spaced in x.
+        return (right.x - left.x) / (3 * L) * (
+            left.y * Math.sin(n * Math.PI * left.x / L) +
+            4 * center.y * Math.sin(n * Math.PI * center.x / L) +
+            right.y * Math.sin(n * Math.PI * right.x / L)
+        );
+    }
+
+    function fourierTermCoefficient(f_coordinates: Point[], n: number) : number {
+        if (f_coordinates.length % 2 !== 1)
+            return NaN;
+        let integral = 0;
+        for (let coordinateIndex = 0; coordinateIndex < f_coordinates.length - 2; coordinateIndex += 2) {
+            const left = f_coordinates[coordinateIndex];
+            const center = f_coordinates[coordinateIndex + 1];
+            const right = f_coordinates[coordinateIndex + 2];
+            if (!left || !center || !right)
+                continue;
+            integral += simpson(left, center, right, n);
+        }
+        return integral;
+    }
+
+    function getXYPairs(f: (x: number) => number, xMin: number, xMax: number, numberOfPoints: number): Point[] {
         const coordinates: Point[] = [];
-        for (let i = 0; i < N_SAMPLES; ++i) {
-            const xi = X_MIN + i * (X_MAX - X_MIN)/(N_SAMPLES - 1);
+        for (let i = 0; i < numberOfPoints; ++i) {
+            const xi = xMin + i * (xMax - xMin)/(numberOfPoints - 1);
             const yi = f(xi);
             coordinates.push({x: xi, y: yi});
         }
