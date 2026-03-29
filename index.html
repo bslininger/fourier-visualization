@@ -35,6 +35,7 @@
       }
       .functionInput {
         display: flex;
+        align-items: center;
         gap: 10px;
         margin-top: 12px;
         margin-bottom: 10px;
@@ -68,6 +69,7 @@
       <canvas id="graph" width="1200" height="650"></canvas>
 
       <div class="functionInput">
+        <span id="fxLabel">\$f(x) =\$</span>
         <input id="functionInputTextBox" type="text" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
         <button id="functionSubmit">Submit f(x)</button>
       </div>

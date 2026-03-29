@@ -5,6 +5,16 @@
 
     import { create, all, type MathNode, type EvalFunction } from "mathjs";
     const math = create(all!);
+    import katex from "katex";
+    import "katex/dist/katex.min.css";
+    import renderMathInElement from "katex/contrib/auto-render";
+
+    renderMathInElement(document.body, {
+        delimiters: [
+            { left: "\\$$", right: "\\$$", display: true },
+            { left: "\\$", right: "\\$", display: false }
+        ]
+    });
 
     // Types
     type Point = {x: number, y: number};
