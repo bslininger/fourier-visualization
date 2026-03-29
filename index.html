@@ -51,6 +51,12 @@
       .functionInput input::placeholder {
         color: rgba(255,255,255,0.5);
       }
+      .functionInput button
+      {
+        align-self: stretch;
+        border-radius: 10px;
+        border: 1px;
+      }
       footer {
         margin-top: 10px;
         font-size: 12px;
@@ -61,6 +67,24 @@
 
   <body>
     <div class="frame">
+      <section class="intro">
+        <p>
+          This tool visualizes how functions can be approximated using Fourier series.
+        </p>
+        <p>
+          Given a real-valued function \$f(x)\$ defined on the interval \$[0, L]\$, this tool visualizes the construction of its Fourier sine series, given by:
+        </p>
+        <p>
+          \$$ \sum_{n=1}^\infty \,b_n \sin{\frac{n \pi x}{L}}\$$
+        </p>
+        <p>
+          where:
+        </p>
+        <p>
+          \$$ b_n = \frac{2}{L} \int_0^L \!f(x) \sin{\frac{n \pi x}{L}} \:dx\$$
+        </p>
+      </section>
+
       <header>
         <div><strong>Fourier Animator</strong></div>
         <div id="status">Ready</div>
@@ -71,7 +95,7 @@
       <div class="functionInput">
         <span id="fxLabel">\$f(x) =\$</span>
         <input id="functionInputTextBox" type="text" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
-        <button id="functionSubmit">Submit f(x)</button>
+        <button id="functionSubmit">Submit \$f(x)\$</button>
       </div>
 
       <footer>

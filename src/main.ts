@@ -364,6 +364,7 @@
     // ---- Kick things off ----
     function kickThingsOff() {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
+        setPhase(Phase.Between)
         currentFourierN = 1;
         currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
         currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
