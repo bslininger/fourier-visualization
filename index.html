@@ -62,6 +62,10 @@
         font-size: 12px;
         opacity: 0.7;
       }
+      .functionReadout {
+        font-size: 1.5em;
+        margin-left: 15px;
+      }
     </style>
   </head>
 
@@ -99,7 +103,10 @@
       </div>
 
       <footer>
-        Tip: open DevTools console to see logs.
+        <p>Your function:</p>
+        <section class="functionReadout">
+          <p id="functionDisplay"></p>
+        </section>
       </footer>
     </div>
 

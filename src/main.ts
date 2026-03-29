@@ -66,7 +66,8 @@
 
     const canvas = getElementOrThrow("graph", HTMLCanvasElement);
     const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
-    const fxSubmit = getElementOrThrow("functionSubmit", HTMLButtonElement);
+    const fxSubmitButton = getElementOrThrow("functionSubmit", HTMLButtonElement);
+    const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
 
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) {
@@ -74,7 +75,7 @@
     }
     const ctx = ctx2d;
 
-    fxSubmit.addEventListener("click", () => {
+    fxSubmitButton.addEventListener("click", () => {
         const expression = fxInputTextBox.value;
         console.log("User entered:", expression);
 
@@ -85,6 +86,8 @@
         fString = expression;
         fCoordinates = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES)
         f0ToLCoordinates = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES)
+        const expr: MathNode = math.parse(fString);
+        katex.render("f(x) =" + expr.toTex(), fxDisplay);
         kickThingsOff();
     }
 
