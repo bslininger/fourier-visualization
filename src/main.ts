@@ -43,17 +43,20 @@
     const VERTICAL_BAR_STEP = 5;
     const VERTICAL_BAR_ANIMATION_FRAMES = 300;
     const FADEOUT_FRAMES = 300;
-    const FUNCTION_STRING = "(x-1)^2 + 1/2";
-    const F_COORDINATES = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES);
     const COUNT_0_TO_L_SAMPLES = 501;
-    const F_0_TO_L_COORDINATES = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES);
 
     // ---- Grab DOM elements ----
-    const canvasElement = document.getElementById("graph");
-    if (!(canvasElement instanceof HTMLCanvasElement)) {
-        throw new Error("Canvas element #graph not found");
+    function getElementOrThrow<T extends HTMLElement>(id: string, type: { new(): T }): T {
+        const element = document.getElementById(id);
+        if (!(element instanceof type)) {
+            throw new Error(`Element #${id} not found or wrong type`);
+        }
+        return element;
     }
-    const canvas = canvasElement;
+
+    const canvas = getElementOrThrow("graph", HTMLCanvasElement);
+    const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
+    const fxSubmit = getElementOrThrow("functionSubmit", HTMLButtonElement);
 
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) {
@@ -61,11 +64,28 @@
     }
     const ctx = ctx2d;
 
+    fxSubmit.addEventListener("click", () => {
+        const expression = fxInputTextBox.value;
+        console.log("User entered:", expression);
+
+        onFunctionSubmit(expression);
+    });
+
+    function onFunctionSubmit(expression: string): void {
+        fString = expression;
+        fCoordinates = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES)
+        f0ToLCoordinates = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES)
+        kickThingsOff();
+    }
+
     // Optional status line
     const statusElement = document.getElementById("status");
 
     // ---- State-tracking variables ----
     let lastTime = 0;
+    let fString = "";
+    let fCoordinates: Point[] = []
+    let f0ToLCoordinates: Point[] = [];
     let currentFunctionSegmentsDrawn = 0;
     let currentFunctionSegments = Infinity;
     let newPartialFourierSumSegmentsDrawn = 0;
@@ -207,7 +227,7 @@
     }
 
     function getFCoordinates(xMin: number, xMax: number, numberOfPoints: number) : Point[] {
-        const expression: MathNode = math.parse(FUNCTION_STRING);
+        const expression: MathNode = math.parse(fString);
         const compiledExpression: EvalFunction = expression.compile();
         return getXYPairs((x) => compiledExpression.evaluate({ x }), xMin, xMax, numberOfPoints);
     }
@@ -299,7 +319,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         drawAxes();
-        drawFunctionOfX(F_COORDINATES, F_COORDINATES.length, "#d70", 1);
+        drawFunctionOfX(fCoordinates, fCoordinates.length, "#d70", 1);
         let fadeout1Alpha = 1 - fadeout1FrameCount / FADEOUT_FRAMES;
         let fadeout2Alpha = 1 - fadeout2FrameCount / FADEOUT_FRAMES;
         if (partialFourierSumCoordinates.length > 0)
@@ -324,12 +344,15 @@
     }
 
     // ---- Kick things off ----
-    currentFourierN = 1;
-    currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
-    currentFunctionSegments = currentFourierComponentCoordinates.length;
-    verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
-    requestAnimationFrame(animate);
+    function kickThingsOff() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        currentFourierN = 1;
+        currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+        currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
+        currentFunctionSegments = currentFourierComponentCoordinates.length;
+        verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
+        requestAnimationFrame(animate);
+    }
 
     // ---- Debug helper (optional) ----
     function setStatus(text: string): void {
@@ -339,7 +362,7 @@
     setStatus("Initialized");
 
     function fourierSine(x: number, n: number): number {
-        return fourierTermCoefficient(F_0_TO_L_COORDINATES, n) * Math.sin(n * Math.PI * x / L);
+        return fourierTermCoefficient(f0ToLCoordinates, n) * Math.sin(n * Math.PI * x / L);
     }
 
     function simpson(left: Point, center: Point, right: Point, n: number): number {

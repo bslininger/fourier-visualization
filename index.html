@@ -33,6 +33,23 @@
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 16px;
       }
+      .functionInput {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        margin-bottom: 10px;
+      }
+      .functionInput input {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: #0f1629;
+        color: #e8e8e8;
+      }
+      .functionInput input::placeholder {
+        color: rgba(255,255,255,0.5);
+      }
       footer {
         margin-top: 10px;
         font-size: 12px;
@@ -49,6 +66,11 @@
       </header>
 
       <canvas id="graph" width="1200" height="650"></canvas>
+
+      <div class="functionInput">
+        <input id="functionInputTextBox" type="text" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
+        <button id="functionSubmit">Submit f(x)</button>
+      </div>
 
       <footer>
         Tip: open DevTools console to see logs.
