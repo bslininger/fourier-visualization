@@ -100,6 +100,7 @@
     let fadeout1FrameCount = 0;
     let fadeout2FrameCount = 0;
     let animationPhase = Phase.Between;
+    drawAxes();
 
     // ---- Animation loop ----
     function animate(time: number) {
@@ -206,8 +207,10 @@
     }
 
     function drawAxes(): void {
-        ctx.beginPath();
+        ctx.save();
+        ctx.globalAlpha = 1;
         ctx.strokeStyle = "#bbb";
+        ctx.beginPath();
         ctx.moveTo(mapX(X_MIN), mapY(0));
         ctx.lineTo(mapX(X_MAX), mapY(0));
         ctx.moveTo(mapX(0), mapY(Y_MIN));
@@ -216,14 +219,19 @@
         const yTickStart = mapX(0);
         const tickLength = 10;
         for (let tick = Math.trunc(X_MIN); tick <= Math.trunc(X_MAX); ++tick) {
-            ctx.moveTo(mapX(tick), xTickStart);
-            ctx.lineTo(mapX(tick), xTickStart - tickLength);
+            if (tick !== 0) {
+                ctx.moveTo(mapX(tick), xTickStart);
+                ctx.lineTo(mapX(tick), xTickStart - tickLength);
+            }
         }
         for (let tick = Math.trunc(Y_MIN); tick <= Math.trunc(Y_MAX); ++tick) {
-            ctx.moveTo(yTickStart, mapY(tick));
-            ctx.lineTo(yTickStart + tickLength, mapY(tick));
+            if (tick !== 0) {
+                ctx.moveTo(yTickStart, mapY(tick));
+                ctx.lineTo(yTickStart + tickLength, mapY(tick));
+            }
         }
         ctx.stroke();
+        ctx.restore();
     }
 
     function getFCoordinates(xMin: number, xMax: number, numberOfPoints: number) : Point[] {
