@@ -83,6 +83,9 @@
     });
 
     function onFunctionSubmit(expression: string): void {
+        if (animationId !== null)
+            cancelAnimationFrame(animationId);
+        resetValues();
         fString = expression;
         fCoordinates = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES)
         f0ToLCoordinates = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES)
@@ -96,6 +99,7 @@
 
     // ---- State-tracking variables ----
     let lastTime = 0;
+    let animationId: number | null = null;
     let fString = "";
     let fCoordinates: Point[] = []
     let f0ToLCoordinates: Point[] = [];
@@ -207,7 +211,7 @@
         update(deltaTime);
         render();
 
-        requestAnimationFrame(animate);
+        animationId = requestAnimationFrame(animate);
     }
 
     // ---- Update logic (no rendering here) ----
@@ -374,6 +378,20 @@
         currentFunctionSegments = currentFourierComponentCoordinates.length;
         verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
         requestAnimationFrame(animate);
+    }
+
+    function resetValues() {
+        currentFunctionSegmentsDrawn = 0;
+        newPartialFourierSumSegmentsDrawn = 0;
+        verticalBarCurrentSegment = 0;
+        verticalBarAnimationFramesDrawn = 0;
+        currentFourierN = 0;
+        fadeout1FrameCount = 0;
+        fadeout2FrameCount = 0;
+        partialFourierSumCoordinates = [];
+        newPartialFourierSumCoordinates = [];
+        currentFourierComponentFunction = (x) => 0;
+        currentFourierComponentCoordinates = [];
     }
 
     // ---- Debug helper (optional) ----
