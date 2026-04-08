@@ -9,12 +9,13 @@
     import "katex/dist/katex.min.css";
     import renderMathInElement from "katex/contrib/auto-render";
 
-    renderMathInElement(document.body, {
+    const mathRenderingOptions = {
         delimiters: [
             { left: "\\$$", right: "\\$$", display: true },
             { left: "\\$", right: "\\$", display: false }
         ]
-    });
+    };
+    renderMathInElement(document.body, mathRenderingOptions);
 
     // Types
     type Point = {x: number, y: number};
@@ -65,6 +66,7 @@
     }
 
     const canvas = getElementOrThrow("graph", HTMLCanvasElement);
+    const continueButton = getElementOrThrow("continueButton", HTMLButtonElement);
     const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const fxSubmitButton = getElementOrThrow("functionSubmit", HTMLButtonElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
@@ -74,6 +76,14 @@
         throw new Error("2D canvas context not available");
     }
     const ctx = ctx2d;
+
+    continueButton.addEventListener("click", () => {
+        if (animationPhase === Phase.Between)
+            incrementPhase();
+        continueButton.textContent = "Running animation for \\$n = " + currentFourierN + "\\$...";
+        renderMathInElement(continueButton, mathRenderingOptions);
+        continueButton.disabled = true;
+    });
 
     fxSubmitButton.addEventListener("click", () => {
         const expression = fxInputTextBox.value;
@@ -124,7 +134,10 @@
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
         if (animationPhase === Phase.Between) {
-            incrementPhase();
+            continueButton.disabled = false;
+            continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation for \\$n = " + currentFourierN + "\\$";
+            renderMathInElement(continueButton, mathRenderingOptions);
+            //incrementPhase();
         }
         else if (animationPhase === Phase.NextComponent) {
             if (currentFunctionSegmentsDrawn < currentFunctionSegments - 1)
