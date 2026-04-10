@@ -18,13 +18,13 @@
       .frame {
         width: min(1000px, 92vw);
       }
-      header {
+      /* header {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
         margin-bottom: 12px;
         opacity: 0.9;
-      }
+      } */
       canvas {
         width: 100%;
         height: 520px;
@@ -32,6 +32,80 @@
         background: #0f1629;
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 16px;
+      }
+      .controlPanel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 12px 0;
+        opacity: 0.9;
+        border: 2px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .rangeControls {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 12px;
+      }
+      .controlContainer {
+        grid-column: 1;
+        align-items: center;
+      }
+      input {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: #0f1629;
+        color: #e8e8e8;
+      }
+      input:disabled {
+        background: #06080f;
+      }
+      input[type="number"] {
+        width: 6ch;
+      }
+      button {
+        background: #232733;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #e8e8e8;
+      }
+      button:disabled {
+        background: #13151b;
+        color: #585858;
+      }
+      .setSubmitButton {
+        border-radius: 10px;
+        padding: 7px;
+      }
+      select {
+        border-radius: 4px;
+        background: #0f1629;
+        border: 1px solid rgba(255,255,255,0.12);
+        padding: 7px;
+        color: #e8e8e8;
+      }
+      .controlLabel {
+        margin-right: 10px;
+      }
+      .betweenText {
+        margin: 0 5px;
+      }
+      .plusMinusButtons {
+        width: 1em;
+        height: 1em;
+        margin: 0 1px;
+        padding: 0;
+        line-height: 1;
+      }
+      .speedAndModeControls div {
+        margin: 12px 0;
+      }
+      .rangeSetButtonContainer {
+        grid-column: 2;
+        grid-row-start: 1;
+        grid-row-end: 3;
+        align-self: stretch;
       }
       .functionInput {
         display: flex;
@@ -70,6 +144,7 @@
   </head>
 
   <body>
+    <h1>Fourier Visualization Tool</h1>
     <div class="frame">
       <section class="intro">
         <p>
@@ -91,15 +166,36 @@
 
       <canvas id="graph" width="1200" height="650"></canvas>
 
-      <header> <!-- Change to footer or other div and add appropriate CSS to match current header tag -->
-        <button id="continueButton" disabled>Enter function to begin</button>
-        <div id="status">Ready</div>
-      </header>
+      <div id="status">Ready</div>
+
+      <div class="controlPanel">
+        <div class="speedAndModeControls">
+          <div class="controlContainer"><span class="controlLabel">Speed: </span><button class="plusMinusButtons">&minus;</button><span class="betweenText">1&times;</span><button class="plusMinusButtons">+</button></div>
+          <div class="controlContainer">
+            <span class="controlLabel">Animation mode:</span>
+            <select>
+              <option value="0">Continuous</option>
+              <option value="1" selected>Pause between terms</option>
+              <option value="2">Pause between phases</option>
+            </select>
+            <button id="modeSet" class="setSubmitButton">Set</button>
+          </div>
+        </div>
+        <div class="rangeControls">
+          <div class="controlContainer"><span class="controlLabel">\$x\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
+          <div class="controlContainer"><span class="controlLabel">\$y\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
+          <div class="rangeSetButtonContainer"><button class="setSubmitButton" style="height: 100%;" disabled>Set</button></div>
+        </div>
+        
+        <div><button id="continueButton" class="setSubmitButton" disabled>Enter function to begin</button></div>
+      </div>
 
       <div class="functionInput">
         <span id="fxLabel">\$f(x) =\$</span>
         <input id="functionInputTextBox" type="text" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
-        <button id="functionSubmit">Submit \$f(x)\$</button>
+        <span id="approximationText">approximated on the interval \$[0, L]\$ where \$L =\$</span>
+        <input style="flex: none;" type="number" step="any" value="1"/>
+        <button id="functionSubmit" class="setSubmitButton">Submit \$f(x)\$</button>
       </div>
 
       <footer>
