@@ -30,7 +30,13 @@
         NewPartialSum = "Drawing new partial sum",
         Fadeout2 = "Fading old partial sum and vertical lines away",
         FadeoutFirstLoop = "Fading first component function into the partial sum's color"
-    }
+    };
+
+    enum AnimationMode {
+        Continuous = "Continuous",
+        ByTerm = "Pause between terms",
+        ByPhase = "Pause between phases"
+    };
 
     const nextPhase: Record<Phase, Phase> = {
         [Phase.Between]:          Phase.NextComponent,
@@ -65,10 +71,17 @@
         return element;
     }
 
-    const canvas = getElementOrThrow("graph", HTMLCanvasElement);
+    // Buttons
+    const speedDownButton = getElementOrThrow("speedMinus", HTMLButtonElement);
+    const speedUpButton = getElementOrThrow("speedPlus", HTMLButtonElement);
+    const modeSetButton = getElementOrThrow("modeSet", HTMLButtonElement);
     const continueButton = getElementOrThrow("continueButton", HTMLButtonElement);
-    const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const fxSubmitButton = getElementOrThrow("functionSubmit", HTMLButtonElement);
+
+    // Other HTML Elements
+    const canvas = getElementOrThrow("graph", HTMLCanvasElement);
+    const modeSelect = getElementOrThrow("modeSelection", HTMLSelectElement);
+    const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
 
     const ctx2d = canvas.getContext("2d");
@@ -76,6 +89,23 @@
         throw new Error("2D canvas context not available");
     }
     const ctx = ctx2d;
+
+    const animationModeMap: Record<string, AnimationMode> = {
+        "Continuous": AnimationMode.Continuous,
+        "ByTerm": AnimationMode.ByTerm,
+        "ByPhase": AnimationMode.ByPhase
+    };
+
+    modeSelect.addEventListener("change", () => {
+        const selectedMode: string = modeSelect.value;
+        modeSetButton.disabled = (animationModeMap[selectedMode] === null || animationModeMap[selectedMode] === animationMode);
+    })
+    
+    modeSetButton.addEventListener("click", () => {
+        const selectedMode: string = modeSelect.value;
+        animationMode = animationModeMap[selectedMode] ?? AnimationMode.ByTerm;
+        modeSetButton.disabled = true;
+    });
 
     continueButton.addEventListener("click", () => {
         if (animationPhase === Phase.Between)
@@ -107,6 +137,9 @@
     // Optional status line
     const statusElement = document.getElementById("status");
 
+    // --- Control panel variables
+    let animationMode = AnimationMode.ByTerm;
+
     // ---- State-tracking variables ----
     let lastTime = 0;
     let animationId: number | null = null;
@@ -134,10 +167,18 @@
         const deltaTime = (time - lastTime) * 0.001; // seconds
         lastTime = time;
         if (animationPhase === Phase.Between) {
-            continueButton.disabled = false;
-            continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation for \\$n = " + currentFourierN + "\\$";
-            renderMathInElement(continueButton, mathRenderingOptions);
-            //incrementPhase();
+            switch (animationMode) {
+                case AnimationMode.Continuous:
+                    incrementPhase();
+                    break;
+                case AnimationMode.ByTerm:
+                case AnimationMode.ByPhase:
+                    continueButton.disabled = false;
+                    continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation for \\$n = " + currentFourierN + "\\$";
+                    renderMathInElement(continueButton, mathRenderingOptions);
+                    //incrementPhase();
+                    break;
+            }
         }
         else if (animationPhase === Phase.NextComponent) {
             if (currentFunctionSegmentsDrawn < currentFunctionSegments - 1)

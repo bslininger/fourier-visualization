@@ -170,21 +170,21 @@
 
       <div class="controlPanel">
         <div class="speedAndModeControls">
-          <div class="controlContainer"><span class="controlLabel">Speed: </span><button class="plusMinusButtons">&minus;</button><span class="betweenText">1&times;</span><button class="plusMinusButtons">+</button></div>
+          <div class="controlContainer"><span class="controlLabel">Speed: </span><button id="speedMinus" class="plusMinusButtons">&minus;</button><span class="betweenText">1&times;</span><button id="speedPlus" class="plusMinusButtons">+</button></div>
           <div class="controlContainer">
             <span class="controlLabel">Animation mode:</span>
-            <select>
-              <option value="0">Continuous</option>
-              <option value="1" selected>Pause between terms</option>
-              <option value="2">Pause between phases</option>
+            <select id="modeSelection">
+              <option value="Continuous">Continuous</option>
+              <option value="ByTerm" selected>Pause between terms</option>
+              <option value="ByPhase">Pause between phases</option>
             </select>
-            <button id="modeSet" class="setSubmitButton">Set</button>
+            <button id="modeSet" class="setSubmitButton" disabled>Set</button>
           </div>
         </div>
         <div class="rangeControls">
           <div class="controlContainer"><span class="controlLabel">\$x\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
           <div class="controlContainer"><span class="controlLabel">\$y\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
-          <div class="rangeSetButtonContainer"><button class="setSubmitButton" style="height: 100%;" disabled>Set</button></div>
+          <div class="rangeSetButtonContainer"><button id="rangeSubmit" class="setSubmitButton" style="height: 100%;" disabled>Set</button></div>
         </div>
         
         <div><button id="continueButton" class="setSubmitButton" disabled>Enter function to begin</button></div>
