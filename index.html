@@ -89,7 +89,9 @@
         margin-right: 10px;
       }
       .betweenText {
-        margin: 0 5px;
+        display: inline-block;
+        text-align: center;
+        width: 4.5ch;
       }
       .plusMinusButtons {
         width: 1em;
@@ -170,7 +172,7 @@
 
       <div class="controlPanel">
         <div class="speedAndModeControls">
-          <div class="controlContainer"><span class="controlLabel">Speed: </span><button id="speedMinus" class="plusMinusButtons">&minus;</button><span class="betweenText">1&times;</span><button id="speedPlus" class="plusMinusButtons">+</button></div>
+          <div class="controlContainer"><span class="controlLabel">Speed: </span><button id="speedMinus" class="plusMinusButtons">&minus;</button><span id="speedText" class="betweenText">1&times;</span><button id="speedPlus" class="plusMinusButtons">+</button></div>
           <div class="controlContainer">
             <span class="controlLabel">Animation mode:</span>
             <select id="modeSelection">
@@ -182,8 +184,8 @@
           </div>
         </div>
         <div class="rangeControls">
-          <div class="controlContainer"><span class="controlLabel">\$x\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
-          <div class="controlContainer"><span class="controlLabel">\$y\$ range:</span><input type="number" disabled /><span class="betweenText"> to </span><input type="number" disabled /></div>
+          <div class="controlContainer"><span class="controlLabel">\$x\$ range:</span><input type="number" disabled /><span class="betweenText">to</span><input type="number" disabled /></div>
+          <div class="controlContainer"><span class="controlLabel">\$y\$ range:</span><input type="number" disabled /><span class="betweenText">to</span><input type="number" disabled /></div>
           <div class="rangeSetButtonContainer"><button id="rangeSubmit" class="setSubmitButton" style="height: 100%;" disabled>Set</button></div>
         </div>
         
