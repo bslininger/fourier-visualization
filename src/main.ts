@@ -78,7 +78,10 @@
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
     const VERTICAL_BAR_STEP = 5;
     const VERTICAL_BAR_ANIMATION_FRAMES = 300;
-    const FADEOUT_FRAMES = 300;
+    const GRAPH_DRAW_TIME = 6;
+    const VERTICAL_BAR_DRAW_TIME = 2;
+    const VERTICAL_BAR_MOVE_TIME = 2;
+    const FADEOUT_TIME = 2;
     const COUNT_0_TO_L_SAMPLES = 501;
 
     // ---- Grab DOM elements ----
@@ -182,15 +185,15 @@
     let currentFunctionSegments = Infinity;
     let newPartialFourierSumSegmentsDrawn = 0;
     let newPartialFourierSumSegments = Infinity;
-    let verticalBarCurrentSegment = 0;
+    let verticalBarSegmentsChecked = 0;
     let currentFourierN = 0;
     let partialFourierSumCoordinates: Point[] = [];
     let newPartialFourierSumCoordinates: Point[] = [];
     let currentFourierComponentFunction: (x: number) => number = (x) => 0;
     let currentFourierComponentCoordinates: Point[] = [];
-    let verticalBarAnimationFramesDrawn = 0;
-    let fadeout1FrameCount = 0;
-    let fadeout2FrameCount = 0;
+    let verticalBarAnimationTime = 0;
+    let fadeout1Time = 0;
+    let fadeout2Time = 0;
     let animationPhase = Phase.Between;
     drawAxes();
 
@@ -216,9 +219,9 @@
                 break;
 
             case Phase.NextComponent:
-                if (currentFunctionSegmentsDrawn < currentFunctionSegments - 1)
-                    currentFunctionSegmentsDrawn += 1;
-                else {
+                currentFunctionSegmentsDrawn += currentFunctionSegments / GRAPH_DRAW_TIME * deltaTime;
+                if (currentFunctionSegmentsDrawn >= currentFunctionSegments) {
+                    currentFunctionSegmentsDrawn = currentFunctionSegments;
                     if (currentFourierN === 1) {
                         partialFourierSumCoordinates = currentFourierComponentCoordinates;
                         setPhase(Phase.FadeoutFirstLoop);
@@ -231,25 +234,27 @@
                 break;
 
             case Phase.AddVertical:
-                if (verticalBarCurrentSegment < currentFunctionSegments - VERTICAL_BAR_STEP)
-                    verticalBarCurrentSegment += VERTICAL_BAR_STEP;
-                else
+                verticalBarSegmentsChecked += currentFunctionSegments / VERTICAL_BAR_DRAW_TIME * deltaTime;
+                if (verticalBarSegmentsChecked >= currentFunctionSegments - VERTICAL_BAR_STEP) {
+                    verticalBarSegmentsChecked = currentFunctionSegments - VERTICAL_BAR_STEP;
                     incrementPhase();
+                }
                 break;
 
             case Phase.Fadeout1:
-                fadeout1FrameCount += 1;
-                if (fadeout1FrameCount === FADEOUT_FRAMES) {
+                fadeout1Time += deltaTime;
+                if (fadeout1Time >= FADEOUT_TIME) {
+                    fadeout1Time = FADEOUT_TIME;
                     currentFunctionSegmentsDrawn = 0;
-                    fadeout1FrameCount = 0;
+                    fadeout1Time = 0;
                     incrementPhase();
                 }
                 break;
 
             case Phase.MoveVertical:
-                if (verticalBarAnimationFramesDrawn < VERTICAL_BAR_ANIMATION_FRAMES)
-                    verticalBarAnimationFramesDrawn += 1;
-                else {
+                verticalBarAnimationTime += deltaTime;
+                if (verticalBarAnimationTime >= VERTICAL_BAR_MOVE_TIME) {
+                    verticalBarAnimationTime = VERTICAL_BAR_MOVE_TIME;
                     newPartialFourierSumCoordinates = partialFourierSumCoordinates.map((point, i) => ({x: point.x, y: point.y + currentFourierComponentCoordinates[i]!.y}));
                     newPartialFourierSumSegments = newPartialFourierSumCoordinates.length;
                     incrementPhase();
@@ -257,23 +262,25 @@
                 break;
 
             case Phase.NewPartialSum:
-                if (newPartialFourierSumSegmentsDrawn < newPartialFourierSumSegments)
-                    newPartialFourierSumSegmentsDrawn += 1;
-                else
+                newPartialFourierSumSegmentsDrawn += newPartialFourierSumSegments / GRAPH_DRAW_TIME * deltaTime;
+                if (newPartialFourierSumSegmentsDrawn >= newPartialFourierSumSegments) {
+                    newPartialFourierSumSegmentsDrawn = newPartialFourierSumSegments;
                     incrementPhase();
+                }
                 break;
 
             case Phase.Fadeout2:
-                fadeout2FrameCount += 1;
-                if (fadeout2FrameCount === FADEOUT_FRAMES) {
+                fadeout2Time += deltaTime;
+                if (fadeout2Time >= FADEOUT_TIME) {
+                    fadeout2Time = FADEOUT_TIME;
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
                     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
                     currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
                     currentFunctionSegments = currentFourierComponentCoordinates.length;
-                    verticalBarAnimationFramesDrawn = 0;
-                    verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
-                    fadeout2FrameCount = 0;
+                    verticalBarAnimationTime = 0;
+                    verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
+                    fadeout2Time = 0;
                     partialFourierSumCoordinates = newPartialFourierSumCoordinates;
                     newPartialFourierSumSegmentsDrawn = 0;
                     newPartialFourierSumCoordinates = [];
@@ -284,14 +291,14 @@
             case Phase.FadeoutFirstLoop:
                 currentFunctionSegmentsDrawn = currentFourierComponentCoordinates.length;
                 newPartialFourierSumSegmentsDrawn = newPartialFourierSumCoordinates.length;
-                fadeout1FrameCount += 1;
-                if (fadeout1FrameCount === FADEOUT_FRAMES) {
+                fadeout1Time += deltaTime;
+                if (fadeout1Time >= FADEOUT_TIME) {
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
                     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
                     currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
                     currentFunctionSegments = currentFourierComponentCoordinates.length;
-                    fadeout1FrameCount = 0;
+                    fadeout1Time = 0;
                     incrementPhase();
                 }
                 break;
@@ -348,6 +355,7 @@
     }
 
     function drawFunctionOfX(coordinates: Point[], numSegments: number, color: string, alpha: number): void {
+        numSegments = math.round(numSegments);
         if (numSegments < 1)
             return;
         ctx.save();
@@ -406,7 +414,7 @@
     }
 
     function drawVerticalBar(componentFunctionPoint: Point, partialSumFunctionPoint: Point, alpha: number) {
-        const distanceToMove = partialSumFunctionPoint.y * (verticalBarAnimationFramesDrawn / VERTICAL_BAR_ANIMATION_FRAMES);
+        const distanceToMove = partialSumFunctionPoint.y * Math.min(verticalBarAnimationTime / VERTICAL_BAR_MOVE_TIME, 1);
         ctx.save();
         ctx.beginPath();
         ctx.lineWidth = 1;
@@ -435,14 +443,14 @@
 
         drawAxes();
         drawFunctionOfX(fCoordinates, fCoordinates.length, "#d70", 1);
-        let fadeout1Alpha = 1 - fadeout1FrameCount / FADEOUT_FRAMES;
-        let fadeout2Alpha = 1 - fadeout2FrameCount / FADEOUT_FRAMES;
+        let fadeout1Alpha = Math.max(1 - fadeout1Time / FADEOUT_TIME, 0);
+        let fadeout2Alpha = Math.max(1 - fadeout2Time / FADEOUT_TIME, 0);
         if (partialFourierSumCoordinates.length > 0)
             drawFunctionOfX(partialFourierSumCoordinates, partialFourierSumCoordinates.length, "#3d7", fadeout2Alpha);
 
         drawFunctionOfX(currentFourierComponentCoordinates, currentFunctionSegmentsDrawn, "#6cf", fadeout1Alpha);
 
-        for (let verticalBarIndex = 0; verticalBarIndex <= verticalBarCurrentSegment; verticalBarIndex += 1) {
+        for (let verticalBarIndex = 0; verticalBarIndex <= verticalBarSegmentsChecked; verticalBarIndex += 1) {
             if (verticalBarIndex % VERTICAL_BAR_STEP !== VERTICAL_BAR_OFFSET)
                 continue;
             // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
@@ -454,7 +462,7 @@
         }
 
         if (newPartialFourierSumCoordinates.length > 0) {
-            if (fadeout2FrameCount > 0)
+            if (fadeout2Time > 0)
                 drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#3d7", 1);
             drawFunctionOfX(newPartialFourierSumCoordinates, newPartialFourierSumSegmentsDrawn, "#91b", fadeout2Alpha);
         }
@@ -468,18 +476,18 @@
         currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
         currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
         currentFunctionSegments = currentFourierComponentCoordinates.length;
-        verticalBarCurrentSegment = VERTICAL_BAR_OFFSET;
+        verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
         requestAnimationFrame(animate);
     }
 
     function resetValues() {
         currentFunctionSegmentsDrawn = 0;
         newPartialFourierSumSegmentsDrawn = 0;
-        verticalBarCurrentSegment = 0;
-        verticalBarAnimationFramesDrawn = 0;
+        verticalBarSegmentsChecked = 0;
+        verticalBarAnimationTime = 0;
         currentFourierN = 0;
-        fadeout1FrameCount = 0;
-        fadeout2FrameCount = 0;
+        fadeout1Time = 0;
+        fadeout2Time = 0;
         partialFourierSumCoordinates = [];
         newPartialFourierSumCoordinates = [];
         currentFourierComponentFunction = (x) => 0;
