@@ -66,6 +66,15 @@
     };
 
     const speeds: Speed[] = [Speed.OneHalf, Speed.ThreeQuarters, Speed.One, Speed.OneAndOneHalf, Speed.Two, Speed.Three, Speed.Five];
+    const speedToNumberMap: Record<Speed, number> = {
+        [Speed.OneHalf]: 0.5,
+        [Speed.ThreeQuarters]: 0.75,
+        [Speed.One]: 1,
+        [Speed.OneAndOneHalf]: 1.5,
+        [Speed.Two]: 2,
+        [Speed.Three]: 3,
+        [Speed.Five]: 5
+    };
     var currentSpeedIndex: number = 2;
 
     // Constants
@@ -207,7 +216,9 @@
 
     // Handle state changes and determine what should get drawn at the current time
     function update(deltaTime: number): void {
-                switch(animationPhase) {
+        let speedFactor = speedToNumberMap[speeds[currentSpeedIndex] ?? Speed.One];
+
+        switch(animationPhase) {
             case Phase.Between:
                 switch (animationMode) {
                     case AnimationMode.Continuous:
@@ -224,7 +235,7 @@
                 break;
 
             case Phase.NextComponent:
-                currentFunctionSegmentsDrawn += currentFunctionSegments / GRAPH_DRAW_TIME * deltaTime;
+                currentFunctionSegmentsDrawn += currentFunctionSegments / GRAPH_DRAW_TIME * speedFactor * deltaTime;
                 if (currentFunctionSegmentsDrawn >= currentFunctionSegments) {
                     currentFunctionSegmentsDrawn = currentFunctionSegments;
                     if (currentFourierN === 1) {
@@ -239,7 +250,7 @@
                 break;
 
             case Phase.AddVertical:
-                verticalBarSegmentsChecked += currentFunctionSegments / VERTICAL_BAR_DRAW_TIME * deltaTime;
+                verticalBarSegmentsChecked += currentFunctionSegments / VERTICAL_BAR_DRAW_TIME * speedFactor * deltaTime;
                 if (verticalBarSegmentsChecked >= currentFunctionSegments - VERTICAL_BAR_STEP) {
                     verticalBarSegmentsChecked = currentFunctionSegments - VERTICAL_BAR_STEP;
                     incrementPhase();
@@ -247,7 +258,7 @@
                 break;
 
             case Phase.Fadeout1:
-                fadeout1TimeElapsed += deltaTime;
+                fadeout1TimeElapsed += speedFactor * deltaTime;
                 if (fadeout1TimeElapsed >= FADEOUT_TIME) {
                     fadeout1TimeElapsed = FADEOUT_TIME;
                     currentFunctionSegmentsDrawn = 0;
@@ -257,7 +268,7 @@
                 break;
 
             case Phase.MoveVertical:
-                verticalBarAnimationTime += deltaTime;
+                verticalBarAnimationTime += speedFactor * deltaTime;
                 if (verticalBarAnimationTime >= VERTICAL_BAR_MOVE_TIME) {
                     verticalBarAnimationTime = VERTICAL_BAR_MOVE_TIME;
                     newPartialFourierSumCoordinates = partialFourierSumCoordinates.map((point, i) => ({x: point.x, y: point.y + currentFourierComponentCoordinates[i]!.y}));
@@ -267,7 +278,7 @@
                 break;
 
             case Phase.NewPartialSum:
-                newPartialFourierSumSegmentsDrawn += newPartialFourierSumSegments / GRAPH_DRAW_TIME * deltaTime;
+                newPartialFourierSumSegmentsDrawn += newPartialFourierSumSegments / GRAPH_DRAW_TIME * speedFactor * deltaTime;
                 if (newPartialFourierSumSegmentsDrawn >= newPartialFourierSumSegments) {
                     newPartialFourierSumSegmentsDrawn = newPartialFourierSumSegments;
                     incrementPhase();
@@ -275,7 +286,7 @@
                 break;
 
             case Phase.Fadeout2:
-                fadeout2TimeElapsed += deltaTime;
+                fadeout2TimeElapsed += speedFactor * deltaTime;
                 if (fadeout2TimeElapsed >= FADEOUT_TIME) {
                     fadeout2TimeElapsed = FADEOUT_TIME;
                     currentFourierN += 1;
@@ -296,7 +307,7 @@
             case Phase.FadeoutFirstLoop:
                 currentFunctionSegmentsDrawn = currentFourierComponentCoordinates.length;
                 newPartialFourierSumSegmentsDrawn = newPartialFourierSumCoordinates.length;
-                fadeout1TimeElapsed += deltaTime;
+                fadeout1TimeElapsed += speedFactor * deltaTime;
                 if (fadeout1TimeElapsed >= FADEOUT_TIME) {
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
