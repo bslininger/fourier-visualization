@@ -219,10 +219,10 @@
 
     // --- Control panel variables
     let animationMode = AnimationMode.ByTerm;
-    let xMin = -2;
-    let xMax = 2;
-    let yMin = -2;
-    let yMax = 2;
+    let xMin = -X_STARTING_MAGNITUDE;
+    let xMax = X_STARTING_MAGNITUDE;
+    let yMin = -Y_STARTING_MAGNITUDE;
+    let yMax = Y_STARTING_MAGNITUDE;
 
     // ---- State-tracking variables ----
     let lastTime = 0;
