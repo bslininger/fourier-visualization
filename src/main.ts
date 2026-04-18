@@ -106,7 +106,6 @@
     // Buttons
     const speedDownButton = getElementOrThrow("speedMinus", HTMLButtonElement);
     const speedUpButton = getElementOrThrow("speedPlus", HTMLButtonElement);
-    const modeSetButton = getElementOrThrow("modeSet", HTMLButtonElement);
     const rangeSetButton = getElementOrThrow("rangeSubmit", HTMLButtonElement);
     const continueButton = getElementOrThrow("continueButton", HTMLButtonElement);
     const fxSubmitButton = getElementOrThrow("functionSubmit", HTMLButtonElement);
@@ -148,14 +147,8 @@
 
     modeSelect.addEventListener("change", () => {
         const selectedMode: string = modeSelect.value;
-        modeSetButton.disabled = ((animationModeMap[selectedMode] ?? animationMode) === animationMode);
-    })
-    
-    modeSetButton.addEventListener("click", () => {
-        const selectedMode: string = modeSelect.value;
         animationMode = animationModeMap[selectedMode] ?? AnimationMode.ByTerm;
-        modeSetButton.disabled = true;
-    });
+    })
 
     rangeSetButton.addEventListener("click", () => {
         xMin = validatedRangeInput(xMinInput.valueAsNumber, -X_LARGEST_MAGNITUDE, -X_SMALLEST_MAGNITUDE, xMin);
