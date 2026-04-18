@@ -22,11 +22,14 @@
 
     // Animation phase enum
     enum Phase {
-        Between = "Pause between functions",
+        Between = "Pause between terms",
         NextComponent = "Drawing next component function",
+        BetweenPhases1 = "Pause after NextComponent phase",
         AddVertical = "Adding vertical lines from x-axis to component function",
         Fadeout1 = "Fading component function away",
+        BetweenPhases2 = "Pause after Fadeout1 phase",
         MoveVertical = "Moving vertical lines to partial sum function",
+        BetweenPhases3 = "Pause after MoveVertical phase",
         NewPartialSum = "Drawing new partial sum",
         Fadeout2 = "Fading old partial sum and vertical lines away",
         FadeoutFirstLoop = "Fading first component function into the partial sum's color"
@@ -34,10 +37,13 @@
 
     const nextPhase: Record<Phase, Phase> = {
         [Phase.Between]:          Phase.NextComponent,
-        [Phase.NextComponent]:    Phase.AddVertical,
+        [Phase.NextComponent]:    Phase.BetweenPhases1,
+        [Phase.BetweenPhases1]:   Phase.AddVertical,
         [Phase.AddVertical]:      Phase.Fadeout1,
-        [Phase.Fadeout1]:         Phase.MoveVertical,
-        [Phase.MoveVertical]:     Phase.NewPartialSum,
+        [Phase.Fadeout1]:         Phase.BetweenPhases2,
+        [Phase.BetweenPhases2]:   Phase.MoveVertical,
+        [Phase.MoveVertical]:     Phase.BetweenPhases3,
+        [Phase.BetweenPhases3]:   Phase.NewPartialSum,
         [Phase.NewPartialSum]:    Phase.Fadeout2,
         [Phase.Fadeout2]:         Phase.Between,
         [Phase.FadeoutFirstLoop]: Phase.Between
@@ -176,7 +182,9 @@
     continueButton.addEventListener("click", () => {
         if (animationPhase === Phase.Between)
             incrementPhase();
-        continueButton.textContent = "Running animation for \\$n = " + currentFourierN + "\\$...";
+        if (animationMode === AnimationMode.ByPhase && [Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(animationPhase))
+            incrementPhase();
+        continueButton.textContent = "Running animation...";
         renderMathInElement(continueButton, mathRenderingOptions);
         continueButton.disabled = true;
     });
@@ -263,14 +271,18 @@
             case Phase.Between:
                 switch (animationMode) {
                     case AnimationMode.Continuous:
-                        incrementPhase();
+                        if (currentFourierN < 2) {
+                            // Animation hasn't started at all yet, don't start it until the start button is clicked
+                            continueButton.disabled = false;
+                            continueButton.textContent = "Start animation";
+                        }
+                        else
+                            incrementPhase();
                         break;
                     case AnimationMode.ByTerm:
                     case AnimationMode.ByPhase:
                         continueButton.disabled = false;
-                        continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation for \\$n = " + currentFourierN + "\\$";
-                        renderMathInElement(continueButton, mathRenderingOptions);
-                        //incrementPhase();
+                        continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation";
                         break;
                 }
                 break;
@@ -287,6 +299,21 @@
                         // TODO: Get correct new partial Fourier function and calculate coordinates with it. (Actually do this in a later phase; we need this after MoveVertical)
                         incrementPhase();
                     }
+                }
+                break;
+
+            case Phase.BetweenPhases1:
+            case Phase.BetweenPhases2:
+            case Phase.BetweenPhases3:
+                switch (animationMode) {
+                    case AnimationMode.Continuous:
+                    case AnimationMode.ByTerm:
+                        incrementPhase();
+                        break;
+                    case AnimationMode.ByPhase:
+                        continueButton.disabled = false;
+                        continueButton.textContent = "Continue animation"
+                        break;
                 }
                 break;
 
