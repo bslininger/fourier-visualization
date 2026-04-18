@@ -78,10 +78,12 @@
     var currentSpeedIndex: number = 2;
 
     // Constants
-    const X_MIN = -2;
-    const X_MAX = 2;
-    const Y_MIN = -2;
-    const Y_MAX = 2;
+    const X_LARGEST_MAGNITUDE = 20;
+    const Y_LARGEST_MAGNITUDE = 20;
+    const X_SMALLEST_MAGNITUDE = 0.1;
+    const Y_SMALLEST_MAGNITUDE = 0.1;
+    const X_STARTING_MAGNITUDE = 2;
+    const Y_STARTING_MAGNITUDE = 2;
     const COUNT_SAMPLES = 1000;
     const L = 1; // Fourier limits from 0 to L = 1.
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
@@ -105,6 +107,7 @@
     const speedDownButton = getElementOrThrow("speedMinus", HTMLButtonElement);
     const speedUpButton = getElementOrThrow("speedPlus", HTMLButtonElement);
     const modeSetButton = getElementOrThrow("modeSet", HTMLButtonElement);
+    const rangeSetButton = getElementOrThrow("rangeSubmit", HTMLButtonElement);
     const continueButton = getElementOrThrow("continueButton", HTMLButtonElement);
     const fxSubmitButton = getElementOrThrow("functionSubmit", HTMLButtonElement);
 
@@ -112,6 +115,10 @@
     const canvas = getElementOrThrow("graph", HTMLCanvasElement);
     const speedText = getElementOrThrow("speedText", HTMLSpanElement);
     const modeSelect = getElementOrThrow("modeSelection", HTMLSelectElement);
+    const xMinInput = getElementOrThrow("xMin", HTMLInputElement);
+    const xMaxInput = getElementOrThrow("xMax", HTMLInputElement);
+    const yMinInput = getElementOrThrow("yMin", HTMLInputElement);
+    const yMaxInput = getElementOrThrow("yMax", HTMLInputElement);
     const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
 
@@ -150,6 +157,29 @@
         modeSetButton.disabled = true;
     });
 
+    rangeSetButton.addEventListener("click", () => {
+        xMin = validatedRangeInput(xMinInput.valueAsNumber, -X_LARGEST_MAGNITUDE, -X_SMALLEST_MAGNITUDE, xMin);
+        xMax = validatedRangeInput(xMaxInput.valueAsNumber, X_SMALLEST_MAGNITUDE, X_LARGEST_MAGNITUDE, xMax);
+        yMin = validatedRangeInput(yMinInput.valueAsNumber, -Y_LARGEST_MAGNITUDE, -Y_SMALLEST_MAGNITUDE, yMin);
+        yMax = validatedRangeInput(yMaxInput.valueAsNumber, Y_SMALLEST_MAGNITUDE, Y_LARGEST_MAGNITUDE, yMax);
+        xMinInput.valueAsNumber = xMin;
+        xMaxInput.valueAsNumber = xMax;
+        yMinInput.valueAsNumber = yMin;
+        yMaxInput.valueAsNumber = yMax;
+    });
+
+    function validatedRangeInput(enteredValue: number, minAllowed: number, maxAllowed: number, fallbackValue: number): number {
+        if (minAllowed > maxAllowed)
+            throw new Error("validatedRangeInput: minAllowed > maxAllowed");
+        if (Number.isNaN(enteredValue))
+            return fallbackValue;
+        if (enteredValue < minAllowed)
+            return minAllowed;
+        if (enteredValue > maxAllowed)
+            return maxAllowed;
+        return enteredValue;
+    }
+
     continueButton.addEventListener("click", () => {
         if (animationPhase === Phase.Between)
             incrementPhase();
@@ -160,8 +190,6 @@
 
     fxSubmitButton.addEventListener("click", () => {
         const expression = fxInputTextBox.value;
-        console.log("User entered:", expression);
-
         onFunctionSubmit(expression);
     });
 
@@ -170,8 +198,24 @@
             cancelAnimationFrame(animationId);
         resetValues();
         fString = expression;
-        fCoordinates = getFCoordinates(X_MIN, X_MAX, COUNT_SAMPLES)
+        fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
         f0ToLCoordinates = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES)
+        xMax = 2 * L;
+        xMin = -xMax;
+        let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE, ...f0ToLCoordinates.map(point => point.y));
+        let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE, ...f0ToLCoordinates.map(point => point.y));
+        let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
+        yMin = -yMagnitude;
+        yMax = yMagnitude;
+        xMinInput.valueAsNumber = xMin;
+        xMinInput.disabled = false;
+        xMaxInput.valueAsNumber = xMax;
+        xMaxInput.disabled = false;
+        yMinInput.valueAsNumber = yMin;
+        yMinInput.disabled = false;
+        yMaxInput.valueAsNumber = yMax;
+        yMaxInput.disabled = false;
+        rangeSetButton.disabled = false;
         const expr: MathNode = math.parse(fString);
         katex.render("f(x) =" + expr.toTex(), fxDisplay);
         kickThingsOff();
@@ -182,6 +226,10 @@
 
     // --- Control panel variables
     let animationMode = AnimationMode.ByTerm;
+    let xMin = -2;
+    let xMax = 2;
+    let yMin = -2;
+    let yMax = 2;
 
     // ---- State-tracking variables ----
     let lastTime = 0;
@@ -292,7 +340,7 @@
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
                     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
+                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
                     currentFunctionSegments = currentFourierComponentCoordinates.length;
                     verticalBarAnimationTime = 0;
                     verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
@@ -312,7 +360,7 @@
                     currentFourierN += 1;
                     currentFunctionSegmentsDrawn = 0;
                     currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
+                    currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
                     currentFunctionSegments = currentFourierComponentCoordinates.length;
                     fadeout1TimeElapsed = 0;
                     incrementPhase();
@@ -326,20 +374,20 @@
         ctx.globalAlpha = 1;
         ctx.strokeStyle = "#bbb";
         ctx.beginPath();
-        ctx.moveTo(mapX(X_MIN), mapY(0));
-        ctx.lineTo(mapX(X_MAX), mapY(0));
-        ctx.moveTo(mapX(0), mapY(Y_MIN));
-        ctx.lineTo(mapX(0), mapY(Y_MAX));
+        ctx.moveTo(mapX(xMin), mapY(0));
+        ctx.lineTo(mapX(xMax), mapY(0));
+        ctx.moveTo(mapX(0), mapY(yMin));
+        ctx.lineTo(mapX(0), mapY(yMax));
         const xTickStart = mapY(0);
         const yTickStart = mapX(0);
         const tickLength = 10;
-        for (let tick = Math.trunc(X_MIN); tick <= Math.trunc(X_MAX); ++tick) {
+        for (let tick = Math.trunc(xMin); tick <= Math.trunc(xMax); ++tick) {
             if (tick !== 0) {
                 ctx.moveTo(mapX(tick), xTickStart);
                 ctx.lineTo(mapX(tick), xTickStart - tickLength);
             }
         }
-        for (let tick = Math.trunc(Y_MIN); tick <= Math.trunc(Y_MAX); ++tick) {
+        for (let tick = Math.trunc(yMin); tick <= Math.trunc(yMax); ++tick) {
             if (tick !== 0) {
                 ctx.moveTo(yTickStart, mapY(tick));
                 ctx.lineTo(yTickStart + tickLength, mapY(tick));
@@ -368,7 +416,7 @@
         let inDrawableSpace = false; // A y value that is finite, real, and within the bounds of the canvas
         let previousCoordinate: { x: number, y: number } | null = null;
 
-        const yOutsideRange = (y: number) => !Number.isFinite(y) || y < Y_MIN || y > Y_MAX;
+        const yOutsideRange = (y: number) => !Number.isFinite(y) || y < yMin || y > yMax;
 
         let numSegmentsDrawn = 0;
         for (const coordinate of coordinates) {
@@ -380,7 +428,7 @@
                 // "Entering" drawable space
                 inDrawableSpace = true;
                 if (previousCoordinate !== null && yOutsideRange(previousCoordinate.y)) {
-                    const yBoundaryHit = previousCoordinate.y < Y_MIN ? Y_MIN : Y_MAX;
+                    const yBoundaryHit = previousCoordinate.y < yMin ? yMin : yMax;
                     // Calculate the ratio of the length of the shortened line segment that hits the boundary to the full line segment length.
                     // This ratio will be the same for both the x and y directions by properties of similar triangles (or using other arguments).
                     // No need for abs() because the top and bottom always have the same sign
@@ -399,7 +447,7 @@
                 // "Exiting" drawable space
                 inDrawableSpace = false;
                 if (previousCoordinate !== null){  // yIsValid is already false, no need to check again
-                    const boundaryHitY = coordinate.y < Y_MIN ? Y_MIN : Y_MAX;
+                    const boundaryHitY = coordinate.y < yMin ? yMin : yMax;
                     const lineLengthRatio = (boundaryHitY - previousCoordinate.y) / (coordinate.y - previousCoordinate.y);
                     const boundaryHitX = previousCoordinate.x + lineLengthRatio * (coordinate.x - previousCoordinate.x);
                     ctx.lineTo(mapX(boundaryHitX), mapY(boundaryHitY));
@@ -475,7 +523,7 @@
         setPhase(Phase.Between)
         currentFourierN = 1;
         currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-        currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, X_MIN, X_MAX, COUNT_SAMPLES);
+        currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
         currentFunctionSegments = currentFourierComponentCoordinates.length;
         verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
         requestAnimationFrame(animate);
@@ -541,9 +589,9 @@
     }
 
     function mapX(x: number): number {
-        return (x - X_MIN) / (X_MAX - X_MIN) * canvas.width;
+        return (x - xMin) / (xMax - xMin) * canvas.width;
     }
 
     function mapY(y: number): number {
-        return (Y_MAX - y) / (Y_MAX - Y_MIN) * canvas.height;  // Flipped sign
+        return (yMax - y) / (yMax - yMin) * canvas.height;  // Flipped sign
     }
