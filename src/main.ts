@@ -165,6 +165,8 @@
         xMaxInput.valueAsNumber = xMax;
         yMinInput.valueAsNumber = yMin;
         yMaxInput.valueAsNumber = yMax;
+        if (animationPhase === Phase.Between && fCoordinates.length !== 0)
+                fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
     });
 
     function validatedRangeInput(enteredValue: number, minAllowed: number, maxAllowed: number, fallbackValue: number): number {
@@ -180,13 +182,21 @@
     }
 
     continueButton.addEventListener("click", () => {
-        if (animationPhase === Phase.Between)
+        if (animationPhase === Phase.Between || (animationMode === AnimationMode.ByPhase && [Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(animationPhase))) {
+            if (currentFourierN < 2) {
+                currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
+                currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
+                currentFunctionSegments = currentFourierComponentCoordinates.length;
+            }
             incrementPhase();
-        if (animationMode === AnimationMode.ByPhase && [Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(animationPhase))
-            incrementPhase();
-        continueButton.textContent = "Running animation...";
-        renderMathInElement(continueButton, mathRenderingOptions);
-        continueButton.disabled = true;
+            continueButton.textContent = "Running animation...";
+            renderMathInElement(continueButton, mathRenderingOptions);
+            xMinInput.disabled = true;
+            xMinInput.valueAsNumber = xMin;
+            xMaxInput.disabled = true;
+            xMaxInput.valueAsNumber = xMax;
+            continueButton.disabled = true;
+        }
     });
 
     fxSubmitButton.addEventListener("click", () => {
@@ -295,10 +305,8 @@
                         partialFourierSumCoordinates = currentFourierComponentCoordinates;
                         setPhase(Phase.FadeoutFirstLoop);
                     }
-                    else {
-                        // TODO: Get correct new partial Fourier function and calculate coordinates with it. (Actually do this in a later phase; we need this after MoveVertical)
+                    else
                         incrementPhase();
-                    }
                 }
                 break;
 
@@ -312,7 +320,7 @@
                         break;
                     case AnimationMode.ByPhase:
                         continueButton.disabled = false;
-                        continueButton.textContent = "Continue animation"
+                        continueButton.textContent = "Continue animation";
                         break;
                 }
                 break;
@@ -363,7 +371,7 @@
                     currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
                     currentFunctionSegments = currentFourierComponentCoordinates.length;
                     verticalBarAnimationTime = 0;
-                    verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
+                    verticalBarSegmentsChecked = 0;
                     fadeout2TimeElapsed = 0;
                     partialFourierSumCoordinates = newPartialFourierSumCoordinates;
                     newPartialFourierSumSegmentsDrawn = 0;
@@ -542,10 +550,6 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         setPhase(Phase.Between)
         currentFourierN = 1;
-        currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
-        currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
-        currentFunctionSegments = currentFourierComponentCoordinates.length;
-        verticalBarSegmentsChecked = VERTICAL_BAR_OFFSET;
         requestAnimationFrame(animate);
     }
 
