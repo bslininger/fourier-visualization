@@ -91,7 +91,6 @@
     const X_STARTING_MAGNITUDE = 2;
     const Y_STARTING_MAGNITUDE = 2;
     const COUNT_SAMPLES = 1000;
-    const L = 1; // Fourier limits from 0 to L = 1.
     const VERTICAL_BAR_OFFSET = 2; // Offset the first bar a bit from the left side of the canvas
     const VERTICAL_BAR_STEP = 5;
     const GRAPH_DRAW_TIME = 6;
@@ -125,6 +124,7 @@
     const yMinInput = getElementOrThrow("yMin", HTMLInputElement);
     const yMaxInput = getElementOrThrow("yMax", HTMLInputElement);
     const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
+    const lInput = getElementOrThrow("limit", HTMLInputElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
 
     const ctx2d = canvas.getContext("2d");
@@ -214,6 +214,15 @@
 
     fxSubmitButton.addEventListener("click", () => {
         const expression = fxInputTextBox.value;
+        let newL = lInput.valueAsNumber;
+        if (Number.isNaN(newL))
+            newL = fourierL;
+        if (newL < 0.1)
+            newL = 0.1;
+        if (newL > 10)
+            newL = 10;
+        fourierL = newL;
+        lInput.valueAsNumber = fourierL;
         onFunctionSubmit(expression);
     });
 
@@ -222,12 +231,12 @@
             cancelAnimationFrame(animationId);
         resetValues();
         fString = expression;
-        fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
-        f0ToLCoordinates = getFCoordinates(0, L, COUNT_0_TO_L_SAMPLES)
-        xMax = 2 * L;
+        xMax = Math.max(X_STARTING_MAGNITUDE, 2 * fourierL);
         xMin = -xMax;
-        let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE, ...f0ToLCoordinates.map(point => point.y));
-        let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE, ...f0ToLCoordinates.map(point => point.y));
+        fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
+        f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
+        let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE + 1, ...f0ToLCoordinates.map(point => point.y));  // +1 and -1 here counteract the -1 and +1 when setting yMagnitude
+        let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE - 1, ...f0ToLCoordinates.map(point => point.y));
         let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
         yMin = -yMagnitude;
         yMax = yMagnitude;
@@ -254,6 +263,7 @@
     let xMax = X_STARTING_MAGNITUDE;
     let yMin = -Y_STARTING_MAGNITUDE;
     let yMax = Y_STARTING_MAGNITUDE;
+    let fourierL = 1;
 
     // ---- State-tracking variables ----
     let lastTime = 0;
@@ -592,15 +602,15 @@
     setStatus("Initialized");
 
     function fourierSine(x: number, n: number): number {
-        return fourierTermCoefficient(f0ToLCoordinates, n) * Math.sin(n * Math.PI * x / L);
+        return fourierTermCoefficient(f0ToLCoordinates, n) * Math.sin(n * Math.PI * x / fourierL);
     }
 
     function simpson(left: Point, center: Point, right: Point, n: number): number {
         // Calculates the Simpson's rule numerical integral for a Fourier coefficient, given a panel of 3 points equally spaced in x.
-        return (right.x - left.x) / (3 * L) * (
-            left.y * Math.sin(n * Math.PI * left.x / L) +
-            4 * center.y * Math.sin(n * Math.PI * center.x / L) +
-            right.y * Math.sin(n * Math.PI * right.x / L)
+        return (right.x - left.x) / (3 * fourierL) * (
+            left.y * Math.sin(n * Math.PI * left.x / fourierL) +
+            4 * center.y * Math.sin(n * Math.PI * center.x / fourierL) +
+            right.y * Math.sin(n * Math.PI * right.x / fourierL)
         );
     }
 
