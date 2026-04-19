@@ -165,8 +165,21 @@
         xMaxInput.valueAsNumber = xMax;
         yMinInput.valueAsNumber = yMin;
         yMaxInput.valueAsNumber = yMax;
-        if (animationPhase === Phase.Between && fCoordinates.length !== 0)
+        if (fCoordinates.length !== 0)
                 fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
+        if (currentFourierComponentCoordinates.length !== 0) {
+            currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
+        if (partialFourierSumCoordinates.length !== 0) {
+            partialFourierSumCoordinates = getXYPairs((x) => fourierSine(x, 1), xMin, xMax, COUNT_SAMPLES);
+            for (let n: number = 2; n < currentFourierN; ++n) {
+                // Don't go all the way to currentFourierN because at this point, that has already been increased by 1 in anticipation of the next term.
+                let nextPartialFourierSumCoordinates: Point[] = getXYPairs((x) => fourierSine(x, n), xMin, xMax, COUNT_SAMPLES);
+                partialFourierSumCoordinates = partialFourierSumCoordinates.map((point, i) => ({x: point.x, y: point.y + nextPartialFourierSumCoordinates[i]!.y}));
+            }
+        }
+        if (newPartialFourierSumCoordinates.length !== 0)
+            newPartialFourierSumCoordinates = partialFourierSumCoordinates.map((point, i) => ({x: point.x, y: point.y + currentFourierComponentCoordinates[i]!.y}));
+        }
     });
 
     function validatedRangeInput(enteredValue: number, minAllowed: number, maxAllowed: number, fallbackValue: number): number {
@@ -293,6 +306,8 @@
                     case AnimationMode.ByPhase:
                         continueButton.disabled = false;
                         continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation";
+                        xMinInput.disabled = false;
+                        xMaxInput.disabled = false;
                         break;
                 }
                 break;
@@ -321,6 +336,8 @@
                     case AnimationMode.ByPhase:
                         continueButton.disabled = false;
                         continueButton.textContent = "Continue animation";
+                        xMinInput.disabled = false;
+                        xMaxInput.disabled = false;
                         break;
                 }
                 break;
