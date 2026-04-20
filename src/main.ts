@@ -125,7 +125,13 @@
     const yMaxInput = getElementOrThrow("yMax", HTMLInputElement);
     const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const lInput = getElementOrThrow("limit", HTMLInputElement);
+    const fxDiv = getElementOrThrow("functionReadoutSuccess", HTMLDivElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
+    const fxError = getElementOrThrow("functionReadoutError", HTMLDivElement);
+    const errorMessageText1 = getElementOrThrow("errorTextPart1", HTMLSpanElement);
+    const errorMessageLatex = getElementOrThrow("errorLatexPart", HTMLSpanElement)
+    const errorMessageText2 = getElementOrThrow("errorTextPart2", HTMLSpanElement);
+
 
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) {
@@ -214,15 +220,6 @@
 
     fxSubmitButton.addEventListener("click", () => {
         const expression = fxInputTextBox.value;
-        let newL = lInput.valueAsNumber;
-        if (Number.isNaN(newL))
-            newL = fourierL;
-        if (newL < 0.1)
-            newL = 0.1;
-        if (newL > 10)
-            newL = 10;
-        fourierL = newL;
-        lInput.valueAsNumber = fourierL;
         onFunctionSubmit(expression);
     });
 
@@ -230,28 +227,67 @@
         if (animationId !== null)
             cancelAnimationFrame(animationId);
         resetValues();
-        fString = expression;
-        xMax = Math.max(X_STARTING_MAGNITUDE, 2 * fourierL);
-        xMin = -xMax;
-        fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
-        f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
-        let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE + 1, ...f0ToLCoordinates.map(point => point.y));  // +1 and -1 here counteract the -1 and +1 when setting yMagnitude
-        let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE - 1, ...f0ToLCoordinates.map(point => point.y));
-        let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
-        yMin = -yMagnitude;
-        yMax = yMagnitude;
-        xMinInput.valueAsNumber = xMin;
-        xMinInput.disabled = false;
-        xMaxInput.valueAsNumber = xMax;
-        xMaxInput.disabled = false;
-        yMinInput.valueAsNumber = yMin;
-        yMinInput.disabled = false;
-        yMaxInput.valueAsNumber = yMax;
-        yMaxInput.disabled = false;
-        rangeSetButton.disabled = false;
-        const expr: MathNode = math.parse(fString);
-        katex.render("f(x) =" + expr.toTex(), fxDisplay);
-        kickThingsOff();
+        try {
+            fString = expression;
+            if (fString.trim().length === 0) {
+                fString = "[empty]";
+                throw new Error("Function input was blank");
+            }
+            let newL = lInput.valueAsNumber;
+            if (Number.isNaN(newL))
+                newL = fourierL;
+            if (newL < 0.1)
+                newL = 0.1;
+            if (newL > 10)
+                newL = 10;
+            fourierL = newL;
+            lInput.valueAsNumber = fourierL;
+            xMax = Math.max(X_STARTING_MAGNITUDE, 2 * fourierL);
+            xMin = -xMax;
+            fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
+            console.log(fCoordinates);
+            f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
+            if (f0ToLCoordinates.every(coordinate => typeof coordinate.y !== "number" || !Number.isFinite(coordinate.y)))
+                throw new Error("Given function||||does not evaluate to a finite, numeric value at any point.");
+            let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE + 1, ...f0ToLCoordinates.map(point => point.y));  // +1 and -1 here counteract the -1 and +1 when setting yMagnitude
+            let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE - 1, ...f0ToLCoordinates.map(point => point.y));
+            let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
+            yMin = -yMagnitude;
+            yMax = yMagnitude;
+            xMinInput.valueAsNumber = xMin;
+            xMinInput.disabled = false;
+            xMaxInput.valueAsNumber = xMax;
+            xMaxInput.disabled = false;
+            yMinInput.valueAsNumber = yMin;
+            yMinInput.disabled = false;
+            yMaxInput.valueAsNumber = yMax;
+            yMaxInput.disabled = false;
+            rangeSetButton.disabled = false;
+            const expr: MathNode = math.parse(fString);
+            katex.render("f(x) =" + expr.toTex(), fxDisplay);
+            fxDiv.style.display = "block";
+            fxError.style.display = "none";
+            fxDiv.scrollIntoView({behavior: "smooth", block: "center"});
+            kickThingsOff();
+        }
+        catch (error) {
+            if (error instanceof Error) {
+                const [part1, part2] = error.message.split("||||");
+                if (part2 !== undefined) {
+                    errorMessageText1.textContent = "Error details: " + part1;
+                    errorMessageText2.textContent = part2;
+                }
+                else {
+                    errorMessageText1.textContent = "Error details: " + part1 + "; given function:";
+                    errorMessageText2.textContent = "";
+                }
+                const expr: MathNode = math.parse(fString);
+                katex.render("f(x) =" + expr.toTex(), errorMessageLatex);
+                fxDiv.style.display = "none";
+                fxError.style.display = "block";
+                fxError.scrollIntoView({behavior: "smooth", block: "center"});
+            }
+        }
     }
 
     // Optional status line

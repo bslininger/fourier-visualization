@@ -33,14 +33,16 @@
         border: 1px solid rgba(255,255,255,0.12);
         border-radius: 16px;
       }
+      .borderedPanel {
+        opacity: 0.9;
+        border: 2px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+      }
       .controlPanel {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin: 12px 0;
-        opacity: 0.9;
-        border: 2px solid rgba(255,255,255,0.12);
-        border-radius: 8px;
         padding: 8px;
       }
       .rangeControls {
@@ -77,9 +79,6 @@
       .setSubmitButton {
         border-radius: 10px;
         padding: 7px;
-      }
-      #continueButton {
-        width: 25ch;
       }
       select {
         border-radius: 4px;
@@ -138,12 +137,23 @@
       }
       footer {
         margin-top: 10px;
-        font-size: 12px;
         opacity: 0.7;
       }
+      .bottomPanel {
+        display: none;
+        padding: 5px 2%;
+        margin-bottom: 20px;
+      }
       .functionReadout {
-        font-size: 1.5em;
+        font-size: 1.5rem;
         margin-left: 15px;
+      }
+      .functionError {
+        background-color: rgb(46, 9, 11);
+      }
+      .errorHeader {
+        font-size: 1.1rem;
+        font-weight: bold;
       }
     </style>
   </head>
@@ -173,7 +183,7 @@
 
       <div id="status">Ready</div>
 
-      <div class="controlPanel">
+      <div class="controlPanel borderedPanel">
         <div class="speedAndModeControls">
           <div class="controlContainer"><span class="controlLabel">Speed: </span><button id="speedMinus" class="plusMinusButtons">&minus;</button><span id="speedText" class="betweenText">1&times;</span><button id="speedPlus" class="plusMinusButtons">+</button></div>
           <div class="controlContainer">
@@ -191,7 +201,7 @@
           <div class="rangeSetButtonContainer"><button id="rangeSubmit" class="setSubmitButton" style="height: 100%;" disabled>Set</button></div>
         </div>
         
-        <div><button id="continueButton" class="setSubmitButton" disabled>Enter function to begin</button></div>
+        <div><button id="continueButton" class="setSubmitButton" style="width: 30ch;" disabled>Enter function below to begin</button></div>
       </div>
 
       <div class="functionInput">
@@ -203,10 +213,15 @@
       </div>
 
       <footer>
-        <p>Your function:</p>
-        <section class="functionReadout">
-          <p id="functionDisplay"></p>
-        </section>
+        <div id="functionReadoutSuccess" class="functionSuccess borderedPanel bottomPanel">
+          <p>Your function:</p>
+          <p id="functionDisplay" class="functionReadout"></p>
+        </div>
+        <div id="functionReadoutError" class="functionError borderedPanel bottomPanel">
+          <p class="errorHeader">Error:</p>
+          <p>The text as entered is not able to be parsed into a function, or is an expression resulting in all undefined values. Please enter a new function.</p>
+          <p id="errorMessage"><span id="errorTextPart1">Error details:</span><span id="errorLatexPart" style="margin: 0 7px"></span><span id="errorTextPart2"></span></p>
+        </div>
       </footer>
     </div>
 
