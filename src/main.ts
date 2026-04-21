@@ -201,7 +201,7 @@
     }
 
     continueButton.addEventListener("click", () => {
-        if (animationPhase === Phase.Between || (animationMode === AnimationMode.ByPhase && [Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(animationPhase))) {
+        if ([Phase.Between, Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(animationPhase)) {
             if (currentFourierN < 2) {
                 currentFourierComponentFunction = (x) => fourierSine(x, currentFourierN);
                 currentFourierComponentCoordinates = getXYPairs(currentFourierComponentFunction, xMin, xMax, COUNT_SAMPLES);
@@ -245,7 +245,6 @@
             xMax = Math.max(X_STARTING_MAGNITUDE, 2 * fourierL);
             xMin = -xMax;
             fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
-            console.log(fCoordinates);
             f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
             if (f0ToLCoordinates.every(coordinate => typeof coordinate.y !== "number" || !Number.isFinite(coordinate.y)))
                 throw new Error("Given function||||does not evaluate to a finite, numeric value at any point.");
@@ -338,24 +337,11 @@
 
         switch(animationPhase) {
             case Phase.Between:
-                switch (animationMode) {
-                    case AnimationMode.Continuous:
-                        if (currentFourierN < 2) {
-                            // Animation hasn't started at all yet, don't start it until the start button is clicked
-                            continueButton.disabled = false;
-                            continueButton.textContent = "Start animation";
-                        }
-                        else
-                            incrementPhase();
-                        break;
-                    case AnimationMode.ByTerm:
-                    case AnimationMode.ByPhase:
-                        continueButton.disabled = false;
-                        continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation";
-                        xMinInput.disabled = false;
-                        xMaxInput.disabled = false;
-                        break;
-                }
+                // The "Continuous" mode normally skips this phase, so if we are in here in this mode, we entered this mode while already in this phase.
+                continueButton.disabled = false;
+                continueButton.textContent = currentFourierN < 2 ? "Start animation" : "Continue animation";
+                xMinInput.disabled = false;
+                xMaxInput.disabled = false;
                 break;
 
             case Phase.NextComponent:
@@ -374,18 +360,11 @@
             case Phase.BetweenPhases1:
             case Phase.BetweenPhases2:
             case Phase.BetweenPhases3:
-                switch (animationMode) {
-                    case AnimationMode.Continuous:
-                    case AnimationMode.ByTerm:
-                        incrementPhase();
-                        break;
-                    case AnimationMode.ByPhase:
-                        continueButton.disabled = false;
-                        continueButton.textContent = "Continue animation";
-                        xMinInput.disabled = false;
-                        xMaxInput.disabled = false;
-                        break;
-                }
+                // The "Continuous" and "ByTerm" modes normally skip these phases, so if we are in here in this mode, we entered this mode while already in one of those phases.
+                continueButton.disabled = false;
+                continueButton.textContent = "Continue animation";
+                xMinInput.disabled = false;
+                xMaxInput.disabled = false;
                 break;
 
             case Phase.AddVertical:
@@ -567,7 +546,12 @@
     }
 
     function incrementPhase(): void {
-        animationPhase = nextPhase[animationPhase];
+        if (animationMode === AnimationMode.Continuous && [Phase.Between, Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(nextPhase[animationPhase]))
+            animationPhase = nextPhase[nextPhase[animationPhase]]; // Skip one; we don't need to do any of the pause ones.
+        else if (animationMode === AnimationMode.ByTerm && [Phase.BetweenPhases1, Phase.BetweenPhases2, Phase.BetweenPhases3].includes(nextPhase[animationPhase]))
+            animationPhase = nextPhase[nextPhase[animationPhase]];
+        else
+            animationPhase = nextPhase[animationPhase];
         setStatus(animationPhase + "; N = " + currentFourierN);
     }
 
