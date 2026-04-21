@@ -64,6 +64,18 @@
       input:disabled {
         background: #06080f;
       }
+      /* Webkit selectors to override autofill background color changes */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #0f1629 inset;
+        -webkit-text-fill-color: #e8e8e8;
+      }
+      input:-webkit-autofill:disabled {
+        -webkit-box-shadow: 0 0 0 1000px #06080f inset;
+        -webkit-text-fill-color: #e8e8e8;
+      }
       input[type="number"] {
         width: 6ch;
       }
@@ -120,11 +132,6 @@
       }
       .functionInput input {
         flex: 1;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: #0f1629;
-        color: #e8e8e8;
       }
       .functionInput input::placeholder {
         color: rgba(255,255,255,0.5);
@@ -132,8 +139,6 @@
       .functionInput button
       {
         align-self: stretch;
-        border-radius: 10px;
-        border: 1px;
       }
       footer {
         margin-top: 10px;
@@ -206,10 +211,10 @@
 
       <div class="functionInput">
         <span id="fxLabel">\$f(x) =\$</span>
-        <input id="functionInputTextBox" type="text" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
+        <input id="functionInputTextBox" type="text" autocomplete="off" placeholder="Enter f(x), e.g. x^2 or sin(x)" />
         <span id="approximationText">approximated on the interval \$[0, L]\$ where \$L =\$</span>
         <input id="limit" style="flex: none;" type="number" step="any" min="0" value="1"/>
-        <button id="functionSubmit" class="setSubmitButton">Submit \$f(x)\$</button>
+        <button id="functionSubmit" class="setSubmitButton" style="width: 13ch;">Submit \$f(x)\$</button>
       </div>
 
       <footer>

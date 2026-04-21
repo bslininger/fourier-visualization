@@ -8,6 +8,7 @@
     import katex from "katex";
     import "katex/dist/katex.min.css";
     import renderMathInElement from "katex/contrib/auto-render";
+import { LineNode } from "katex/src/domTree.js";
 
     const mathRenderingOptions = {
         delimiters: [
@@ -123,7 +124,7 @@
     const xMaxInput = getElementOrThrow("xMax", HTMLInputElement);
     const yMinInput = getElementOrThrow("yMin", HTMLInputElement);
     const yMaxInput = getElementOrThrow("yMax", HTMLInputElement);
-    const fxInputTextBox = getElementOrThrow("functionInputTextBox", HTMLInputElement);
+    const fxInput = getElementOrThrow("functionInputTextBox", HTMLInputElement);
     const lInput = getElementOrThrow("limit", HTMLInputElement);
     const fxDiv = getElementOrThrow("functionReadoutSuccess", HTMLDivElement);
     const fxDisplay = getElementOrThrow("functionDisplay", HTMLParagraphElement);
@@ -209,7 +210,6 @@
             }
             incrementPhase();
             continueButton.textContent = "Running animation...";
-            renderMathInElement(continueButton, mathRenderingOptions);
             xMinInput.disabled = true;
             xMinInput.valueAsNumber = xMin;
             xMaxInput.disabled = true;
@@ -219,8 +219,16 @@
     });
 
     fxSubmitButton.addEventListener("click", () => {
-        const expression = fxInputTextBox.value;
-        onFunctionSubmit(expression);
+        if (!fxInput.disabled) {
+            // If the input box is not disabled, then there is no active function right now. (Kind of fragile, could use a state-tracking bool here)
+            const expression = fxInput.value;
+            onFunctionSubmit(expression);
+        }
+        else {
+            onReset();
+            fxSubmitButton.innerHTML = "Submit \\$f(x)\\$";
+            renderMathInElement(fxSubmitButton, mathRenderingOptions);
+        }
     });
 
     function onFunctionSubmit(expression: string): void {
@@ -247,7 +255,7 @@
             fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
             f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
             if (f0ToLCoordinates.every(coordinate => typeof coordinate.y !== "number" || !Number.isFinite(coordinate.y)))
-                throw new Error("Given function||||does not evaluate to a finite, numeric value at any point.");
+                throw new Error("Given functiondoes not evaluate to a finite, numeric value at any point.");
             let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE + 1, ...f0ToLCoordinates.map(point => point.y));  // +1 and -1 here counteract the -1 and +1 when setting yMagnitude
             let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE - 1, ...f0ToLCoordinates.map(point => point.y));
             let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
@@ -267,11 +275,14 @@
             fxDiv.style.display = "block";
             fxError.style.display = "none";
             fxDiv.scrollIntoView({behavior: "smooth", block: "center"});
+            fxInput.disabled = true;
+            lInput.disabled = true;
+            fxSubmitButton.innerText = "Reset";
             kickThingsOff();
         }
         catch (error) {
             if (error instanceof Error) {
-                const [part1, part2] = error.message.split("||||");
+                const [part1, part2] = error.message.split("@|@");
                 if (part2 !== undefined) {
                     errorMessageText1.textContent = "Error details: " + part1;
                     errorMessageText2.textContent = part2;
@@ -280,13 +291,38 @@
                     errorMessageText1.textContent = "Error details: " + part1 + "; given function:";
                     errorMessageText2.textContent = "";
                 }
-                const expr: MathNode = math.parse(fString);
-                katex.render("f(x) =" + expr.toTex(), errorMessageLatex);
+                try {
+                    const expr: MathNode = math.parse(fString);
+                    katex.render("f(x) =" + expr.toTex(), errorMessageLatex);
+                }
+                catch (parseError) {
+                    fString = "[unparsable function]";
+                    const expr: MathNode = math.parse(fString);
+                    katex.render("f(x) =" + expr.toTex(), errorMessageLatex);
+                }
                 fxDiv.style.display = "none";
                 fxError.style.display = "block";
                 fxError.scrollIntoView({behavior: "smooth", block: "center"});
             }
         }
+    }
+
+    function onReset() {
+        if (animationId !== null)
+            cancelAnimationFrame(animationId);
+        resetValues();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawAxes();
+        fxInput.disabled = false;
+        lInput.disabled = false;
+        xMinInput.disabled = true;
+        xMaxInput.disabled = true;
+        yMinInput.disabled = true;
+        yMaxInput.disabled = true;
+        fString = "";
+        fxDiv.style.display = "none";
+        fxError.style.display = "none";
+        setStatus("Reset");
     }
 
     // Optional status line
