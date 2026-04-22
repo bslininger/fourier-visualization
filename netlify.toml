@@ -1,0 +1,9 @@
+[[redirects]]
+from = "/fourier"
+to = "/index.html"
+status = 200
+
+[[redirects]]
+from = "/fourier/*"
+to = "/index.html"
+status = 200
