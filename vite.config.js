@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: '/fourier/',
+  base: '/fourier/',
+  build: {
+    outDir: 'dist/fourier',
+  },
 });
