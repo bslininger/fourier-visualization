@@ -255,7 +255,7 @@ import { LineNode } from "katex/src/domTree.js";
             fCoordinates = getFCoordinates(xMin, xMax, COUNT_SAMPLES)
             f0ToLCoordinates = getFCoordinates(0, fourierL, COUNT_0_TO_L_SAMPLES)
             if (f0ToLCoordinates.every(coordinate => typeof coordinate.y !== "number" || !Number.isFinite(coordinate.y)))
-                throw new Error("Given functiondoes not evaluate to a finite, numeric value at any point.");
+                throw new Error("Given function does not evaluate to a finite, numeric value at any point");
             let yMin0ToL = Math.min(-Y_STARTING_MAGNITUDE + 1, ...f0ToLCoordinates.map(point => point.y));  // +1 and -1 here counteract the -1 and +1 when setting yMagnitude
             let yMax0ToL = Math.max(Y_STARTING_MAGNITUDE - 1, ...f0ToLCoordinates.map(point => point.y));
             let yMagnitude = Math.min(20, Math.max(-(yMin0ToL - 1), yMax0ToL + 1));
