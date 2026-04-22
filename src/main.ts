@@ -328,6 +328,8 @@ import { LineNode } from "katex/src/domTree.js";
         fxError.style.display = "none";
         setStatus("Reset; enter new function below");
         setCurrentNString(-1);
+        continueButton.textContent = "Enter function below";
+        continueButton.disabled = true;
     }
 
     // --- Control panel variables
