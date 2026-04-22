@@ -18,13 +18,6 @@
       .frame {
         width: min(1000px, 92vw);
       }
-      /* header {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        opacity: 0.9;
-      } */
       canvas {
         width: 100%;
         height: 520px;
@@ -41,6 +34,15 @@
       }
       a:hover {
         text-decoration: underline;
+      }
+      .underGraphInformation {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 14px;
+      }
+      .underGraphInformation div {
+        min-height: 1.7em;
       }
       .borderedPanel {
         opacity: 0.9;
@@ -153,7 +155,11 @@
       {
         align-self: stretch;
       }
-      footer {
+      small {
+        margin-left: 1em;
+        margin-top: 7px;
+      }
+      .functionReadout {
         margin-top: 10px;
         opacity: 0.7;
       }
@@ -177,11 +183,11 @@
   </head>
 
   <body>
-    <h1>Fourier Visualization Tool</h1>
     <div class="frame">
+      <h1>Fourier Visualization Tool</h1>
       <section class="intro">
         <p>
-          This tool visualizes how functions can be approximated using Fourier series.
+          This tool visualizes how functions can be approximated using <a href="https://en.wikipedia.org/wiki/Fourier_series">Fourier series</a>.
         </p>
         <p>
           Given a real-valued function \$f(x)\$ defined on the interval \$[0, L]\$, this tool visualizes the construction of its Fourier sine series, given by:
@@ -195,11 +201,20 @@
         <p>
           \$$ b_n = \frac{2}{L} \int_0^L \!f(x) \sin{\frac{n \pi x}{L}} \:dx\$$
         </p>
+        <p>
+          The graph space below shows the graphs of the given function \$f(x)\$ along with the approximating Fourier series partial sum. For each term of the series, this tool sketches the graph of just that term, as a single sine wave. As each new term
+          is added, the partial Fourier series gets more complete. The first term of the Fourier series is a partial sum on its own. Then, each subsequent term of the series is drawn one-by-one as its own simple sine wave. After the graph of a
+          term's wave is drawn, the heights of that new wave are shown as vertical lines extending from the wave to the \$x\$-axis. These heights then move to anchor themselves to the graph of the existing partial Fourier series, and a new wave is drawn
+          from these heights, depicting the sum of the previous partial sum and the new term as a new wave representing a more complete partial sum, and more closely matching the graph of \$f(x)\$ on the interval from \$0\$ to \$L\$.
+        </p>
       </section>
 
       <canvas id="graph" width="1200" height="650"></canvas>
 
-      <div id="status">Ready</div>
+      <footer class="underGraphInformation">
+        <div id="status"></div>
+        <div id="currentN"></div>
+      </footer>
 
       <div class="controlPanel borderedPanel">
         <div class="speedAndModeControls">
@@ -233,7 +248,7 @@
         <small>See the Math.js <a href="https://mathjs.org/docs/expressions/syntax.html">syntax documentation</a> and <a href="https://mathjs.org/docs/reference/functions.html">function documentation</a> for information on how to format your function input.</small>
       </div>
 
-      <footer>
+      <footer class="functionReadoutOrError">
         <div id="functionReadoutSuccess" class="functionSuccess borderedPanel bottomPanel">
           <p>Your function:</p>
           <p id="functionDisplay" class="functionReadout"></p>

@@ -23,17 +23,17 @@ import { LineNode } from "katex/src/domTree.js";
 
     // Animation phase enum
     enum Phase {
-        Between = "Pause between terms",
-        NextComponent = "Drawing next component function",
-        BetweenPhases1 = "Pause after NextComponent phase",
-        AddVertical = "Adding vertical lines from x-axis to component function",
-        Fadeout1 = "Fading component function away",
-        BetweenPhases2 = "Pause after Fadeout1 phase",
-        MoveVertical = "Moving vertical lines to partial sum function",
-        BetweenPhases3 = "Pause after MoveVertical phase",
-        NewPartialSum = "Drawing new partial sum",
-        Fadeout2 = "Fading old partial sum and vertical lines away",
-        FadeoutFirstLoop = "Fading first component function into the partial sum's color"
+        Between,
+        NextComponent,
+        BetweenPhases1,
+        AddVertical,
+        Fadeout1,
+        BetweenPhases2,
+        MoveVertical,
+        BetweenPhases3,
+        NewPartialSum,
+        Fadeout2,
+        FadeoutFirstLoop
     };
 
     const nextPhase: Record<Phase, Phase> = {
@@ -118,6 +118,8 @@ import { LineNode } from "katex/src/domTree.js";
 
     // Other HTML Elements
     const canvas = getElementOrThrow("graph", HTMLCanvasElement);
+    const statusElement = getElementOrThrow("status", HTMLDivElement);
+    const currentNStatus = getElementOrThrow("currentN", HTMLDivElement);
     const speedText = getElementOrThrow("speedText", HTMLSpanElement);
     const modeSelect = getElementOrThrow("modeSelection", HTMLSelectElement);
     const xMinInput = getElementOrThrow("xMin", HTMLInputElement);
@@ -273,6 +275,7 @@ import { LineNode } from "katex/src/domTree.js";
             const expr: MathNode = math.parse(fString);
             katex.render("f(x) =" + expr.toTex(), fxDisplay);
             fxDiv.style.display = "block";
+            fxDiv.style.visibility = "visible";
             fxError.style.display = "none";
             fxDiv.scrollIntoView({behavior: "smooth", block: "center"});
             fxInput.disabled = true;
@@ -320,13 +323,12 @@ import { LineNode } from "katex/src/domTree.js";
         yMinInput.disabled = true;
         yMaxInput.disabled = true;
         fString = "";
-        fxDiv.style.display = "none";
+        // fxDiv.style.display = "none";
+        fxDiv.style.visibility = "hidden";
         fxError.style.display = "none";
-        setStatus("Reset");
+        setStatus("Reset; enter new function below");
+        setCurrentNString(-1);
     }
-
-    // Optional status line
-    const statusElement = document.getElementById("status");
 
     // --- Control panel variables
     let animationMode = AnimationMode.ByTerm;
@@ -356,7 +358,9 @@ import { LineNode } from "katex/src/domTree.js";
     let fadeout1TimeElapsed = 0;
     let fadeout2TimeElapsed = 0;
     let animationPhase = Phase.Between;
+
     drawAxes();
+    setStatus("Enter function below");
 
     // ---- Animation loop ----
     function animate(time: number) {
@@ -391,6 +395,7 @@ import { LineNode } from "katex/src/domTree.js";
                     else
                         incrementPhase();
                 }
+                setCurrentNString(currentFourierN);
                 break;
 
             case Phase.BetweenPhases1:
@@ -588,12 +593,45 @@ import { LineNode } from "katex/src/domTree.js";
             animationPhase = nextPhase[nextPhase[animationPhase]];
         else
             animationPhase = nextPhase[animationPhase];
-        setStatus(animationPhase + "; N = " + currentFourierN);
+        setStatusFromPhase();
     }
 
     function setPhase(newPhase: Phase) : void {
         animationPhase = newPhase;
-        setStatus(animationPhase + "; N = " + currentFourierN);
+        setStatusFromPhase();
+    }
+
+    function setStatusFromPhase() {
+        switch (animationPhase) {
+            case (Phase.Between):
+                if (currentFourierN < 1)
+                    setStatus("Ready to start");
+                else {
+                    setStatus("Paused; next term to graph: \\$n = " + currentFourierN.toString() + "\\$")
+                    renderMathInElement(statusElement, mathRenderingOptions);
+                }
+                break;
+            case Phase.NextComponent:
+            case Phase.FadeoutFirstLoop:
+                setStatus("Drawing the new wave graph of the next term of the Fourier series");
+                break;
+            case Phase.AddVertical:
+            case Phase.Fadeout1:
+                setStatus("Adding the height of the new wave at each point");
+                break;
+            case Phase.MoveVertical:
+                setStatus("Moving the height of the new wave to anchor to the graph of the previous Fourier series partial sum");
+                break;
+            case Phase.NewPartialSum:
+            case Phase.Fadeout2:
+                setStatus("Drawing the new Fourier series partial sum, with the additional wave from this term")
+                break;
+            case Phase.BetweenPhases1:
+            case Phase.BetweenPhases2:
+            case Phase.BetweenPhases3:
+                setStatus("Paused");
+                break;
+        }
     }
 
     // ---- Rendering logic (no state mutation here) ----
@@ -613,8 +651,6 @@ import { LineNode } from "katex/src/domTree.js";
         for (let verticalBarIndex = 0; verticalBarIndex <= verticalBarSegmentsChecked; verticalBarIndex += 1) {
             if (verticalBarIndex % VERTICAL_BAR_STEP !== VERTICAL_BAR_OFFSET)
                 continue;
-            // TODO: Change this to only draw a bar if verticalBarIndex % VERTICAL_BAR_STEP === VERTICAL_BAR_OFFSET but the loop increases by 1 each time
-            // This keeps the animation speed slower, matching the speed of drawing the graphs of the functions
             const componentFunctionPoint = currentFourierComponentCoordinates[verticalBarIndex];
             const partialSumFunctionPoint = partialFourierSumCoordinates[verticalBarIndex];
             if (componentFunctionPoint !== undefined && partialSumFunctionPoint !== undefined)
@@ -650,12 +686,21 @@ import { LineNode } from "katex/src/domTree.js";
         currentFourierComponentCoordinates = [];
     }
 
-    // ---- Debug helper (optional) ----
     function setStatus(text: string): void {
-        if (statusElement) statusElement.textContent = text;
+        if (statusElement)
+            statusElement.textContent = text;
     }
 
-    setStatus("Initialized");
+    function setCurrentNString(n: number): void {
+        if (currentNStatus) {
+            if (n < 0)
+                currentNStatus.innerText = "";
+            else {
+                currentNStatus.innerHTML = "\\$n = " + n.toString() + "\\$";
+                renderMathInElement(currentNStatus, mathRenderingOptions);
+            }
+        }
+    }
 
     function fourierSine(x: number, n: number): number {
         return fourierTermCoefficient(f0ToLCoordinates, n) * Math.sin(n * Math.PI * x / fourierL);
